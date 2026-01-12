@@ -50,7 +50,7 @@ def __load_alpha_file(self: tk.Tk):
         return []
 
     # Read and close the file, splitting into words by whitespace
-    self.busy_text = "Reading file..."
+    self.status_text_queue.put("Reading file...")
     listed_words = f.read().strip().lower().split()
     f.close()
 
@@ -63,7 +63,7 @@ def __load_alpha_file(self: tk.Tk):
         return []
 
     # Filter out duplicates
-    self.busy_text = "Filtering out duplicates in file..."
+    self.status_text_queue.put("Filtering out duplicates in file...")
     nodupe_words = set(listed_words)
     dupe_count = len(listed_words) - len(nodupe_words)
     if dupe_count:
@@ -73,7 +73,7 @@ def __load_alpha_file(self: tk.Tk):
             )
 
     # filter file to only alpha words
-    self.busy_text = "Filtering to alpha-only words..."
+    self.status_text_queue.put("Filtering to alpha-only words...")
     alpha_words = [
         word for word in nodupe_words if word.isalpha()
     ]
@@ -148,14 +148,14 @@ def load_files(self: tk.Tk, select: bool = True, do_or_die: bool = False):
             self.game_path = response  # We got a new valid directory
 
     # First, load the wordlist
-    self.busy_text = f"Loading {bw.WORDLIST_FILE}..."
+    self.status_text_queue.put(f"Loading {bw.WORDLIST_FILE}...")
     with open(
         self.wordlist_abs_path, encoding=bw.FILE_ENC
     ) as f:
         self.words = sorted(bw.unpack_wordlist(f.read().strip()))
 
     # Then, load the popdefs
-    self.busy_text = f"Loading {bw.POPDEFS_FILE}..."
+    self.status_text_queue.put(f"Loading {bw.POPDEFS_FILE}...")
     with open(
         self.popdefs_abs_path, encoding=bw.FILE_ENC
     ) as f:
@@ -166,7 +166,7 @@ def load_files(self: tk.Tk, select: bool = True, do_or_die: bool = False):
             )
 
     # Update the query list
-    self.busy_text = "Updating display..."
+    self.status_text_queue.put("Updating display...")
     self.update_query()
 
     # The files were just (re)loaded, so there are no unsaved changes
@@ -184,7 +184,7 @@ def save_files(self: tk.Tk, backup: bool = False):
 
     # Backup system
     # Recommend a backup if the files are older than this program
-    self.busy_text = "Checking need for backup..."
+    self.status_text_queue.put("Checking need for backup...")
     backup = backup or (
         # Make sure we have files to back up before timestamp reading
         bw.is_game_path_valid(self.game_path) and
@@ -202,11 +202,11 @@ def save_files(self: tk.Tk, backup: bool = False):
             ))
 
     if backup:
-        self.busy_text = "Creating backup..."
+        self.status_text_queue.put("Creating backup...")
         self.make_backup()
 
     # First, encode the wordlist
-    self.busy_text = f"Encoding {bw.WORDLIST_FILE}..."
+    self.status_text_queue.put(f"Encoding {bw.WORDLIST_FILE}...")
 
     # Ensure that the wordlist encodes properly
     # Technically, this should never fail because a word should always be alpha
@@ -223,7 +223,7 @@ def save_files(self: tk.Tk, backup: bool = False):
         return
 
     # Then, encode the popdefs
-    self.busy_text = f"Encoding {bw.POPDEFS_FILE}..."
+    self.status_text_queue.put(f"Encoding {bw.POPDEFS_FILE}...")
 
     # Ensure that the popdefs encodes properly
     try:
@@ -238,7 +238,7 @@ def save_files(self: tk.Tk, backup: bool = False):
             )
         return
 
-    self.busy_text = "Writing to disk..."
+    self.status_text_queue.put("Writing to disk...")
     with open(self.wordlist_abs_path, "wb") as f:
         f.write(encoded_wordlist)
     with open(self.popdefs_abs_path, "wb") as f:
@@ -258,7 +258,7 @@ def mass_add_words(self: tk.Tk):
         return
 
     # Filter to words we do not already have
-    self.busy_text = "Filtering to only new words..."
+    self.status_text_queue.put("Filtering to only new words...")
     new_words = [
         word for word in alpha_words
         if bw.binary_search(self.words, word) is None
@@ -282,7 +282,7 @@ def mass_add_words(self: tk.Tk):
         )
 
     # Filter to words of valid lengths
-    self.busy_text = "Filtering out invalid length words..."
+    self.status_text_queue.put("Filtering out invalid length words...")
     new_lenvalid_words = [
         word for word in new_words if self.is_len_valid(word)
         ]
@@ -308,7 +308,7 @@ def mass_add_words(self: tk.Tk):
         )
 
     # Add the new words
-    self.busy_text = "Combining lists..."
+    self.status_text_queue.put("Combining lists...")
     self.words += new_lenvalid_words
     self.words.sort()
 
@@ -334,7 +334,7 @@ def mass_delete_words(self: tk.Tk):
         return
 
     # Filter down to words we actually have
-    self.busy_text = "Finding words we do have..."
+    self.status_text_queue.put("Finding words we do have...")
     old_words = [
         word for word in del_words
         if bw.binary_search(self.words, word) is not None
@@ -357,7 +357,7 @@ def mass_delete_words(self: tk.Tk):
         )
 
     # Perform the deletion
-    self.busy_text = "Deleting..."
+    self.status_text_queue.put("Deleting...")
     for word in old_words:
         self._delete_word(word)
 
@@ -410,7 +410,7 @@ def del_orphaned_defs(self: tk.Tk):
     Args:
         self (tk.Tk): The main GUI."""
 
-    self.busy_text = "Finding orphaned definitions..."
+    self.status_text_queue.put("Finding orphaned definitions...")
     orphaned = [
         word for word in self.defs if bw.binary_search(self.words, word) is None
     ]
@@ -424,7 +424,7 @@ def del_orphaned_defs(self: tk.Tk):
         return
 
     # Delete the orphaned definitions
-    self.busy_text = "Deleting orphans..."
+    self.status_text_queue.put("Deleting orphans...")
     for o in orphaned:
         del self.defs[o]
 
@@ -440,7 +440,7 @@ def del_badenc_defs(self: tk.Tk):
 
     Args:
         self (tk.Tk): The main GUI."""
-    self.busy_text = "Finding and deleting unencodable definitions..."
+    self.status_text_queue.put("Finding and deleting unencodable definitions...")
     found = 0
     for word, definition in self.defs.copy().items():
         try:
@@ -471,7 +471,7 @@ def del_dupe_words(self: tk.Tk):
     Args:
         self (tk.Tk): The main GUI."""
 
-    self.busy_text = "Searching for duplicates..."
+    self.status_text_queue.put("Searching for duplicates...")
     unduped = set(self.words)  # Sets don't have duplicate entries
     dupe_count = len(self.words) - len(unduped)
 
@@ -484,7 +484,7 @@ def del_dupe_words(self: tk.Tk):
         return
 
     # There were duplicates, so now convert and sort the set
-    self.busy_text = "Ordering unduplicated set..."
+    self.status_text_queue.put("Ordering unduplicated set...")
     self.words = list(unduped)
     self.words.sort()
 
@@ -511,7 +511,7 @@ def mass_auto_define(self: tk.Tk):
         return
 
     # Find all words below the usage threshold and without a definition
-    self.busy_text = "Finding undefined rare words..."
+    self.status_text_queue.put("Finding undefined rare words...")
     defined_words = tuple(self.defs)
     words_to_define = [
         word for word in self.words
@@ -530,7 +530,7 @@ def mass_auto_define(self: tk.Tk):
         return
 
     # Attempt to define all the words
-    self.busy_text = f"Auto-defining {total:,} words..."
+    self.status_text_queue.put(f"Auto-defining {total:,} words...")
     fails = 0
     for word in words_to_define:
         result, success = bw.build_auto_def(word)
@@ -548,7 +548,7 @@ def mass_auto_define(self: tk.Tk):
         return
 
     # If there were successes, sort the updated popdefs alphabetically
-    self.busy_text = "Sorting popdefs..."
+    self.status_text_queue.put("Sorting popdefs...")
     self.defs = dict(sorted(self.defs.items()))
 
     if fails:

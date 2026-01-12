@@ -20,6 +20,7 @@ limitations under the License.
 S.D.G."""
 
 from os import path as op
+from queue import Queue
 import shutil
 import threading
 import tkinter as tk
@@ -42,6 +43,7 @@ BACKUP_FILEEXT = ".bak"  # Suffix for backup files
 # Miscellanious GUI settings
 WINDOW_TITLE = info.PROGRAM_NAME
 UNSAVED_WINDOW_TITLE = "*" + WINDOW_TITLE
+STATUS_TICK_DELAY_MS = 100
 
 # Index with int(<is rare?>)
 RARE_COLS = (theme.COLORS["paper"], theme.COLORS["sapphire"])
@@ -74,7 +76,10 @@ class Editor(tk.Tk):
         # Is the GUI currently busy (all widgets disabled)?
         self.__busy = False
 
-        self.__busy_text = ""  # Current operations message
+        self.__status_text = ""  # Current operations message
+
+        self.status_text_queue = Queue()  # Thread pipe for status text
+        self.status_tick()
 
         # Menu base name: display label pairs.
         # Menus must be disabled by display label.
@@ -456,10 +461,10 @@ class Editor(tk.Tk):
         self.rowconfigure(0, weight=1)
 
         # Status display footer
-        self.status_displaytext = tk.StringVar(self)
+        self.status_label_str = tk.StringVar(self)
         self.status_label = ttk.Label(
             self,
-            textvariable=self.status_displaytext,
+            textvariable=self.status_label_str,
             anchor=tk.W,
             relief="sunken",
             style="Score.TLabel",
@@ -536,7 +541,7 @@ class Editor(tk.Tk):
             method (callable): The method to run.
             message (str): The message to show over the greyed out GUI."""
 
-        self.busy_text = message
+        self.status_text = message
         self.busy = True
         try:
             method()
@@ -570,7 +575,7 @@ class Editor(tk.Tk):
         self.__busy = new
 
         if new:
-            self.status_displaytext.set(self.busy_text)
+            self.status_label_str.set(self.status_text)
 
         # Has its own check for current busy state, safe to run regardless
         self.update_idle_status()
@@ -586,22 +591,36 @@ class Editor(tk.Tk):
         self.unique_disable_handlers()
 
     @property
-    def busy_text(self) -> str:
+    def status_text(self) -> str:
         """Current operations message"""
-        return self.__busy_text
+        return self.__status_text
 
-    @busy_text.setter
-    def busy_text(self, new: str):
+    @status_text.setter
+    def status_text(self, new: str):
         """Current operations message"""
-        self.__busy_text = new
+        self.__status_text = new
         # If we are currently busy, display the new message
         if self.busy:
-            self.status_displaytext.set(new)
+            self.status_label_str.set(new)
+
+    def status_tick(self):
+        """Run one iteration of checking the status text queue, and schedule the next one"""
+        # Allow for no updates
+        message = None
+
+        # Skip to the end of the queue
+        while not self.status_text_queue.empty():
+            message = self.status_text_queue.get()
+
+        if message:
+            self.status_text = message
+
+        self.after(STATUS_TICK_DELAY_MS, self.status_tick)
 
     def update_idle_status(self):
         """If we are currently idle, refresh the idle status message"""
         if not self.busy:
-            self.status_displaytext.set(self.idle_status)
+            self.status_label_str.set(self.idle_status)
 
     def update_rarity_disp_style(self):
         """Set the update meter text to the current value
