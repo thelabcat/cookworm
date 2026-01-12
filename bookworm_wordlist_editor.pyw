@@ -44,6 +44,7 @@ BACKUP_FILEEXT = ".bak"  # Suffix for backup files
 WINDOW_TITLE = info.PROGRAM_NAME
 UNSAVED_WINDOW_TITLE = "*" + WINDOW_TITLE
 STATUS_TICK_DELAY_MS = 100
+THREAD_WAITING_TICK_DELAY_MS = 100
 
 # Index with int(<is rare?>)
 RARE_COLS = (theme.COLORS["paper"], theme.COLORS["sapphire"])
@@ -79,7 +80,6 @@ class Editor(tk.Tk):
         self.__status_text = ""  # Current operations message
 
         self.status_text_queue = Queue()  # Thread pipe for status text
-        self.status_tick()
 
         # Menu base name: display label pairs.
         # Menus must be disabled by display label.
@@ -96,7 +96,8 @@ class Editor(tk.Tk):
         self.rarity_disp_double.trace_add("write", lambda *args: self.update_rarity_disp_style())
 
         # Handle unsaved changes
-        self.__unsaved_changes = False
+        self.__unsaved_changes_displaystate = False
+        self.unsaved_changes = False
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Make the GUI
@@ -111,6 +112,9 @@ class Editor(tk.Tk):
         # Lock built size as minimum
         self.update()
         self.minsize(self.winfo_width(), self.winfo_height())
+
+        # Start the status ticker
+        self.status_tick()
 
         # Load files
         self.load_files(select=False, do_or_die=True)
@@ -471,30 +475,6 @@ class Editor(tk.Tk):
         )
         self.status_label.grid(row=1, column=0, columnspan=2, sticky=tk.EW)
 
-    @property
-    def unsaved_changes(self) -> bool:
-        """If we currently have unsaved changes"""
-
-        return self.__unsaved_changes
-
-    @unsaved_changes.setter
-    def unsaved_changes(self, new_value: bool):
-        """If we have unsaved changes
-
-        Args:
-            new_value (bool): Setting if changes are currently unsaved"""
-
-        assert isinstance(new_value, bool), \
-            "Value for unsaved changes must be bool"
-
-        self.__unsaved_changes = new_value
-
-        # Set the window title based on wether changes are saved or not
-        self.title((WINDOW_TITLE, UNSAVED_WINDOW_TITLE)[int(new_value)])
-
-        # Make sure the status footer is up-to-date with any new changes
-        self.update_idle_status()
-
     def on_closing(self):
         """What to do if the user clicks to close this window"""
 
@@ -529,32 +509,40 @@ class Editor(tk.Tk):
             function (callable): The function or method to run in a thread.
             message (str): The message to show over the greyed out GUI."""
 
+        self.status_text = message
+        self.busy = True
         self.thread = threading.Thread(
-            target=lambda: self.__busy_run(function, message), daemon=True
+            target=lambda: self.__busy_run(function), daemon=True
         )
         self.thread.start()
 
-    def __busy_run(self, method: callable, message: str = "Working.."):
-        """Run a method, and grey out the GUI until it's finished.
+        self.thread_waiting_tick()
 
-        Args:
-            method (callable): The method to run.
-            message (str): The message to show over the greyed out GUI."""
+    def thread_waiting_tick(self):
+        """Wait for the current thread to finish with after timers, then un-grey the GUI"""
+        # TODO could this whole method be combined with status_tick()?
 
-        self.status_text = message
-        self.busy = True
-        try:
-            method()
-        except Exception as e:
-            mb.showerror(
-                "Unhandled exception",
-                "While running the operation, the program ran into an error:" +
-                f"\n{type(e).__name__}: {e}"
-                )
+        if self.thread.is_alive():
+            self.after(THREAD_WAITING_TICK_DELAY_MS, self.thread_waiting_tick)
+            return
+
+        # The thread has finished
         self.busy = False
 
         # The currently selected word may have had changes made
         self.selection_updated()
+
+    def __busy_run(self, method: callable):
+        """Run a method, and grey out the GUI until it's finished.
+
+        Args:
+            method (callable): The method to run."""
+
+        try:
+            method()
+        except Exception as e:
+            # TODO the GUI error notification no longer works
+            print(f"\n{type(e).__name__}: {e}")
 
     @property
     def idle_status(self) -> str:
@@ -574,12 +562,6 @@ class Editor(tk.Tk):
         # For other widget disablers to reference
         self.__busy = new
 
-        if new:
-            self.status_label_str.set(self.status_text)
-
-        # Has its own check for current busy state, safe to run regardless
-        self.update_idle_status()
-
         # Enable or disable all the widgets
         new_state = (tk.NORMAL, tk.DISABLED)[int(new)]
         for entry in self.menu_labels.values():
@@ -587,25 +569,27 @@ class Editor(tk.Tk):
         for widget in self.widgets_to_disable:
             widget.config(state=new_state)
 
+        # Reset the status message to idle as needed
+        if not new:
+            self.status_text = self.idle_status
+
         # Rerun any unique widget disablers
         self.unique_disable_handlers()
 
     @property
     def status_text(self) -> str:
-        """Current operations message"""
+        """Current operations message (thread-safe)"""
         return self.__status_text
 
     @status_text.setter
     def status_text(self, new: str):
-        """Current operations message"""
+        """Current operations message (thread-safe)"""
         self.__status_text = new
-        # If we are currently busy, display the new message
-        if self.busy:
-            self.status_label_str.set(new)
+        self.status_text_queue.put(new)
 
     def status_tick(self):
-        """Run one iteration of checking the status text queue, and schedule the next one"""
-        # Allow for no updates
+        """Run one iteration of updating status displays"""
+        # Allow for no text updates
         message = None
 
         # Skip to the end of the queue
@@ -613,14 +597,21 @@ class Editor(tk.Tk):
             message = self.status_text_queue.get()
 
         if message:
-            self.status_text = message
+            self.status_label_str.set(message)
+
+        # We have a new signal value for changes not being saved
+        if self.unsaved_changes != self.__unsaved_changes_displaystate:
+            # Set the window title based on wether changes are saved or not
+            self.title(
+                (
+                    WINDOW_TITLE,
+                    UNSAVED_WINDOW_TITLE,
+                    )[int(self.unsaved_changes)]
+                )
+
+            self.__unsaved_changes_displaystate = self.unsaved_changes
 
         self.after(STATUS_TICK_DELAY_MS, self.status_tick)
-
-    def update_idle_status(self):
-        """If we are currently idle, refresh the idle status message"""
-        if not self.busy:
-            self.status_label_str.set(self.idle_status)
 
     def update_rarity_disp_style(self):
         """Set the update meter text to the current value
