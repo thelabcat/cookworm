@@ -20,7 +20,6 @@ limitations under the License.
 S.D.G."""
 
 from os import path as op
-import sys
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox as mb
@@ -98,54 +97,11 @@ def __load_alpha_file(self: tk.Tk):
     return alpha_words
 
 
-def load_files(self: tk.Tk, select: bool = True, do_or_die: bool = False):
-    """Load the wordlist and the popdefs
+def load_files(self: tk.Tk):
+    """Load the wordlist and the popdefs, given the game_path attribute
 
     Args:
-        self (tk.Tk): The main GUI.
-        select (bool): Wether or not we need to prompt the user to select a
-            new path.
-            Defaults to True.
-        do_or_die (bool): Wether or not cancelling is not an option.
-            Defaults to False, cancelling is an option."""
-
-    # Ask the user for a directory if the current one is invalid, even if
-    # the select argument is false.
-    select = select or not bw.is_game_path_valid(self.game_path)
-
-    # While we need to select something
-    while select:
-        while True:  # Keep asking for an input
-            response = filedialog.askdirectory(
-                title="Game directory", initialdir=bw.deepest_valid_path(self.game_path)
-            )
-
-            # We got a response, so break the loop.
-            if response:
-                break
-
-            # The user cancelled, but we aren't supposed to force. Abort.
-            if not do_or_die:
-                return
-
-            # The only remaining possibility is that the user cancelled,
-            # but we are do or die. They must choose a directory, or quit.
-            if mb.askyesno(
-                "Cannot cancel",
-                "The program needs a valid directory to continue. Exit the program?",
-            ):
-                self.destroy()
-                sys.exit()
-
-        # If the game path is valid, we are no longer selecting
-        select = not bw.is_game_path_valid(response)
-        if select:
-            mb.showerror(
-                "Invalid directory",
-                "Could not find the word list and pop definitions here.",
-            )
-        else:
-            self.game_path = response  # We got a new valid directory
+        self (tk.Tk): The main GUI."""
 
     # First, load the wordlist
     self.status_text = f"Loading {bw.WORDLIST_FILE}..."
@@ -167,7 +123,6 @@ def load_files(self: tk.Tk, select: bool = True, do_or_die: bool = False):
 
     # Update the query list
     self.status_text = "Updating display..."
-    self.update_query()
 
     # The files were just (re)loaded, so there are no unsaved changes
     self.unsaved_changes = False

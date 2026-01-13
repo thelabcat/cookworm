@@ -22,8 +22,10 @@ S.D.G."""
 from os import path as op
 from queue import Queue
 import shutil
+import sys
 import threading
 import tkinter as tk
+from tkinter import filedialog
 from tkinter import messagebox as mb
 from tkinter import simpledialog as dialog
 from tkinter import ttk
@@ -529,7 +531,8 @@ class Editor(tk.Tk):
         # The thread has finished
         self.busy = False
 
-        # The currently selected word may have had changes made
+        # The currently selected query and word may have had changes made
+        self.update_query()
         self.selection_updated()
 
     def __busy_run(self, method: callable):
@@ -718,8 +721,52 @@ class Editor(tk.Tk):
             do_or_die(bool): Wether or not cancelling is not an option.
                 Defaults to False, cancelling is an option."""
 
+        # Disable the GUI even while not threading, while the file dialog is open
+        self.busy = True
+
+        # Ask the user for a directory if the current one is invalid, even if
+        # the select argument is false.
+        select = select or not bw.is_game_path_valid(self.game_path)
+
+        # While we need to select something
+        while select:
+            while True:  # Keep asking for an input
+                response = filedialog.askdirectory(
+                    title="Game directory", initialdir=bw.deepest_valid_path(self.game_path)
+                )
+
+                # We got a response, so break the loop.
+                if response:
+                    break
+
+                # The user cancelled, but we aren't supposed to force. Abort.
+                if not do_or_die:
+                    # The GUI should no longer be disabled
+                    self.busy = False
+                    return
+
+                # The only remaining possibility is that the user cancelled,
+                # but we are do or die. They must choose a directory, or quit.
+                if mb.askyesno(
+                    "Cannot cancel",
+                    "The program needs a valid directory to continue. Exit the program?",
+                ):
+                    self.destroy()
+                    sys.exit()
+
+            # If the game path is valid, we are no longer selecting
+            select = not bw.is_game_path_valid(response)
+            if select:
+                mb.showerror(
+                    "Invalid directory",
+                    "Could not find the word list and pop definitions here.",
+                )
+            else:
+                self.game_path = response  # We got a new valid directory
+
+        # Load the files from the game path
         self.thread_process(
-            lambda: gui_heavy_ops.load_files(self, select, do_or_die),
+            lambda: gui_heavy_ops.load_files(self),
             message="Loading...",
         )
 
