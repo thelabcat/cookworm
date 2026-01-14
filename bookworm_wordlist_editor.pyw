@@ -30,6 +30,7 @@ from tkinter import messagebox as mb
 from tkinter import simpledialog as dialog
 from tkinter import ttk
 import time
+from typing import TextIO
 import webbrowser
 import bookworm_utils as bw
 import config_io
@@ -779,6 +780,25 @@ class Editor(tk.Tk):
                 backup name.
                 Defaults to False."""
 
+        # Backup system
+        # Recommend a backup if the files are older than this program
+        self.status_text = "Checking need for backup..."
+        backup = backup or (
+            # Make sure we have files to back up before timestamp reading
+            bw.is_game_path_valid(self.game_path) and
+
+            # Files are older than this program
+            min((
+                op.getmtime(self.wordlist_abs_path),
+                op.getmtime(self.popdefs_abs_path),
+                )) < info.INITIAL_COMMIT_TIMESTAMP and
+
+            # User confirmed a backup based on this
+            mb.askyesno(
+                "Backup recommended",
+                "The existing game files are older than this program. Save a backup?"
+                ))
+
         self.thread_process(lambda: gui_heavy_ops.save_files(self, backup))
 
     def make_backup(self) -> bool:
@@ -812,6 +832,18 @@ class Editor(tk.Tk):
             f"Copied files to current game path with suffix '{backup_suffix}'",
             )
         return True
+
+    def select_alpha_file(self):
+        """
+        Let the user select a text file
+
+        Returns:
+            f (TextIO): The opened file for reading
+        """
+        return filedialog.askopenfile(
+            title="Select human-readable list of words",
+            filetypes=bw.TEXT_FILETYPE,
+        )
 
     def selection_updated(self):
         """A new word has been selected (or the equivalent of such), update
@@ -1084,12 +1116,22 @@ class Editor(tk.Tk):
     def mass_add_words(self):
         """Add a whole file's worth of words (threaded)"""
 
-        self.thread_process(lambda: gui_heavy_ops.mass_add_words(self))
+        self.thread_process(
+            lambda: gui_heavy_ops.mass_add_words(
+                self,
+                self.select_alpha_file(),
+                ),
+            )
 
     def mass_delete_words(self):
         """Delete a whole file's worth of words (threaded)"""
 
-        self.thread_process(lambda: gui_heavy_ops.mass_delete_words(self))
+        self.thread_process(
+            lambda: gui_heavy_ops.mass_delete_words(
+                self,
+                self.select_alpha_file(),
+                ),
+            )
 
     def delete_selected_word(self):
         """Delete the currently selected word"""

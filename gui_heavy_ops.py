@@ -19,36 +19,27 @@ limitations under the License.
 
 S.D.G."""
 
-from os import path as op
 import tkinter as tk
-from tkinter import filedialog
 from tkinter import messagebox as mb
+from typing import TextIO
 import bookworm_utils as bw
-import info
 
 
-def __load_alpha_file(self: tk.Tk):
-    """Select a text file containing a human-readable list of words,
-        read it, close it, and filter the result to alpha-only words.
+def __parse_alpha_file(self: tk.Tk, f: TextIO):
+    """Read a text file containing a human-readable list of words,
+        close it, and filter the result to alpha-only words.
 
     Args:
         self (tk.Tk): The main GUI.
+        f (TextIO): The file object the user has selected
 
     Returns:
         words (list): The list of alpha-only words from the file.
             Returns empty list if cancelled."""
 
-    # Have the user select the file
-    f = filedialog.askopenfile(
-        title="Select human-readable list of words",
-        filetypes=bw.TEXT_FILETYPE,
-    )
-
-    # The user cancelled via the open file dialog
-    if not f:
-        return []
-
     # Read and close the file, splitting into words by whitespace
+    if not f:  # The user cancelled file selection
+        return []
     self.status_text = "Reading file..."
     listed_words = f.read().strip().lower().split()
     f.close()
@@ -137,25 +128,6 @@ def save_files(self: tk.Tk, backup: bool = False):
         backup (bool): Wether or not to copy the original files to a backup name.
             Defaults to False."""
 
-    # Backup system
-    # Recommend a backup if the files are older than this program
-    self.status_text = "Checking need for backup..."
-    backup = backup or (
-        # Make sure we have files to back up before timestamp reading
-        bw.is_game_path_valid(self.game_path) and
-
-        # Files are older than this program
-        min((
-            op.getmtime(self.wordlist_abs_path),
-            op.getmtime(self.popdefs_abs_path),
-            )) < info.INITIAL_COMMIT_TIMESTAMP and
-
-        # User confirmed a backup based on this
-        mb.askyesno(
-            "Backup recommended",
-            "The existing game files are older than this program. Save a backup?"
-            ))
-
     if backup:
         self.status_text = "Creating backup..."
         self.make_backup()
@@ -202,13 +174,16 @@ def save_files(self: tk.Tk, backup: bool = False):
     self.unsaved_changes = False  # All changes are now saved
 
 
-def mass_add_words(self: tk.Tk):
-    """Add a whole file's worth of words
+def mass_add_words(self: tk.Tk, f: TextIO):
+    """
+    Add a whole file's worth of words
 
     Args:
-        self (tk.Tk): The main GUI."""
+        self (tk.Tk): The main GUI
+        f (TextIO): The selected file
+    """
 
-    alpha_words = __load_alpha_file(self)
+    alpha_words = __parse_alpha_file(self, f)
     if not alpha_words:
         return
 
@@ -277,14 +252,15 @@ def mass_add_words(self: tk.Tk):
     )
 
 
-def mass_delete_words(self: tk.Tk):
+def mass_delete_words(self: tk.Tk, f: TextIO):
     """Delete a whole file's worth of words
 
     Args:
-        self (tk.Tk): The main GUI."""
+        self (tk.Tk): The main GUI
+        f (TextIO): The selected file"""
 
     # Get the list of words to delete
-    del_words = __load_alpha_file(self)
+    del_words = __parse_alpha_file(self, f)
     if not del_words:
         return
 
