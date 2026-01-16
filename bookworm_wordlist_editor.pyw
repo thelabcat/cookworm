@@ -30,7 +30,6 @@ from tkinter import messagebox as mb
 from tkinter import simpledialog as dialog
 from tkinter import ttk
 import time
-from typing import TextIO
 import webbrowser
 import bookworm_utils as bw
 import config_io
@@ -84,6 +83,23 @@ class Editor(tk.Tk):
 
         self.status_text_queue = Queue()  # Thread pipe for status text
 
+        # Queues of (title, message) to use as dialog arguments
+        self.op_infos = Queue()
+        self.op_warnings = Queue()
+        self.op_errors = Queue()
+
+        # Ordered pairs of the queues with the callable to use on them
+        self.op_dialog_queues_n_calls = list(zip([
+            self.op_errors,
+            self.op_warnings,
+            self.op_infos,
+            ],
+        [
+            mb.showerror,
+            mb.showwarning,
+            mb.showinfo],
+        ))
+
         # Menu base name: display label pairs.
         # Menus must be disabled by display label.
         self.menu_labels = {}
@@ -100,7 +116,7 @@ class Editor(tk.Tk):
 
         # Handle unsaved changes
         self.__unsaved_changes_displaystate = False
-        self.unsaved_changes = False
+        self.unsaved_changes = False  # Thread-save
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Make the GUI
@@ -615,6 +631,13 @@ class Editor(tk.Tk):
 
             self.__unsaved_changes_displaystate = self.unsaved_changes
 
+        # Show all process dialogs
+        for queue, showdialog in self.op_dialog_queues_n_calls:
+            if not queue.empty():
+                showdialog(*queue.get())
+                break  # Show all of one type of dialog
+            # This loop will run again on the next tick
+
         self.after(STATUS_TICK_DELAY_MS, self.status_tick)
 
     def update_rarity_disp_style(self):
@@ -1097,7 +1120,7 @@ class Editor(tk.Tk):
         self.selected_word = new
 
     def mass_unsaved_changes(self, title: str, changes: str):
-        """Call when mass changes have been made to the files.
+        """DEPRECATED: Call when mass changes have been made to the files.
             Offers to save them to disk.
 
         Args:

@@ -20,7 +20,6 @@ limitations under the License.
 S.D.G."""
 
 import tkinter as tk
-from tkinter import messagebox as mb
 from typing import TextIO
 import bookworm_utils as bw
 
@@ -46,10 +45,10 @@ def __parse_alpha_file(self: tk.Tk, f: TextIO):
 
     # There were no words
     if not listed_words:
-        mb.showerror(
+        self.op_errors.put((
             "Invalid file",
             "Did not find any words in file.",
-            )
+            ))
         return []
 
     # Filter out duplicates
@@ -57,10 +56,10 @@ def __parse_alpha_file(self: tk.Tk, f: TextIO):
     nodupe_words = set(listed_words)
     dupe_count = len(listed_words) - len(nodupe_words)
     if dupe_count:
-        mb.showwarning(
+        self.op_warnings.put((
             "Some duplicates in file",
             f"The file had {dupe_count:,} duplicate listings in itself.",
-            )
+            ))
 
     # filter file to only alpha words
     self.status_text = "Filtering to alpha-only words..."
@@ -71,19 +70,19 @@ def __parse_alpha_file(self: tk.Tk, f: TextIO):
 
     # There was no text besides non-alpha symbols
     if not alpha_words:
-        mb.showerror(
+        self.op_errors.put((
             "Invalid file",
             "File did not contain any alpha-only words.",
-            )
+            ))
         return []
 
     # There were some non-alpha words
     if nonalpha_count:
-        mb.showwarning(
+        self.op_warnings.put((
             "Some invalid words",
             f"{nonalpha_count:,} words were rejected because they " +
             "contained non-alpha characters.",
-        )
+        ))
 
     return alpha_words
 
@@ -142,11 +141,11 @@ def save_files(self: tk.Tk, backup: bool = False):
             .encode(bw.FILE_ENC)
     except UnicodeEncodeError:
         # Failure to encode stops us from even trying to open the file
-        mb.showerror(
+        self.op_errors.put((
             "File encoding error",
             "One or more word entries contain characters that couldn't" +
             f"be encoded in {bw.FILE_ENC}."
-            )
+            ))
         return
 
     # Then, encode the popdefs
@@ -158,11 +157,11 @@ def save_files(self: tk.Tk, backup: bool = False):
             .encode(bw.FILE_ENC)
     except UnicodeEncodeError:
         # Failure to encode stops us from even trying to open the file
-        mb.showerror(
+        self.op_errors.put((
             "File encoding error",
             "One or more definition entries contain characters that couldn't" +
             f"be encoded in {bw.FILE_ENC}."
-            )
+            ))
         return
 
     self.status_text = "Writing to disk..."
@@ -197,19 +196,19 @@ def mass_add_words(self: tk.Tk, f: TextIO):
 
     # There were no words that we didn't already have
     if not new_words:
-        mb.showinfo(
+        self.op_infos.put((
             "Already have all words",
             f"All {len(alpha_words):,} alpha-only words are already " +
             "in the word list.",
-        )
+        ))
         return
 
     # We already have some of the words
     if already_have:
-        mb.showinfo(
+        self.op_infos.put((
             "Already have some words",
             f"{already_have:,} words are already in the word list.",
-        )
+        ))
 
     # Filter to words of valid lengths
     self.status_text = "Filtering out invalid length words..."
@@ -220,22 +219,22 @@ def mass_add_words(self: tk.Tk, f: TextIO):
 
     # There were no words of valid length
     if not new_lenvalid_words:
-        mb.showerror(
+        self.op_errors.put((
             "Invalid word lengths",
             f"All {len(new_words):,} new words were rejected because " +
             f"they were not between {bw.WORD_LENGTH_MIN:,} and " +
             f"{bw.WORD_LENGTH_MAX:,} letters long.",
-        )
+        ))
         return
 
     # There were some words of invalid length
     if len_invalid:
-        mb.showinfo(
+        self.op_infos.put((
             "Some invalid word lengths",
             f"{len_invalid:,} words were rejected because they were not " +
             f"between {bw.WORD_LENGTH_MIN:,} and {bw.WORD_LENGTH_MAX:,} " +
             "letters long.",
-        )
+        ))
 
     # Add the new words
     self.status_text = "Combining lists..."
@@ -246,10 +245,13 @@ def mass_add_words(self: tk.Tk, f: TextIO):
     self.update_query()
 
     # There are now major unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Words added",
         f"Added {len(new_lenvalid_words):,} new words to the word list."
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def mass_delete_words(self: tk.Tk, f: TextIO):
@@ -274,18 +276,18 @@ def mass_delete_words(self: tk.Tk, f: TextIO):
 
     # We don't have any of the words in the list
     if not old_words:
-        mb.showinfo(
+        self.op_infos.put((
             "Don't have any of the words",
             f"None of the {len(del_words):,} words are in the word list.",
-        )
+        ))
         return
 
     # We only have some of the words in the list
     if dont_have:
-        mb.showinfo(
+        self.op_infos.put((
             "Don't have some words",
             f"{dont_have:,} of the words are not in the wordlist.",
-        )
+        ))
 
     # Perform the deletion
     self.status_text = "Deleting..."
@@ -296,10 +298,13 @@ def mass_delete_words(self: tk.Tk, f: TextIO):
     self.update_query()
 
     # There are now major unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Words deleted",
         f"Removed {len(old_words):,} words from the word list.",
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def del_invalid_len_words(self: tk.Tk):
@@ -313,11 +318,11 @@ def del_invalid_len_words(self: tk.Tk):
 
     # If all words were of valid length, notify the user
     if not invalid:
-        mb.showinfo(
+        self.op_infos.put((
             "No invalid length words",
             f"All words are already between {bw.WORD_LENGTH_MIN:,} " +
             f"and {bw.WORD_LENGTH_MAX:,} letters long.",
-        )
+        ))
         return
 
     # Perform the deletion
@@ -328,11 +333,14 @@ def del_invalid_len_words(self: tk.Tk):
     self.update_query()
 
     # There are now mass unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Invalid length words deleted",
         f"Found and deleted {len(invalid):,} words of invalid length " +
         "from the word list."
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def del_orphaned_defs(self: tk.Tk):
@@ -348,10 +356,10 @@ def del_orphaned_defs(self: tk.Tk):
 
     # No orphaned definitions found
     if not orphaned:
-        mb.showinfo(
+        self.op_infos.put((
             "No orphaned definitions",
             "All recorded definitions have a word they are paired with.",
-        )
+        ))
         return
 
     # Delete the orphaned definitions
@@ -360,10 +368,13 @@ def del_orphaned_defs(self: tk.Tk):
         del self.defs[o]
 
     # There are now mass unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Orphaned definitions deleted",
         f"Found and deleted {len(orphaned):,} orphaned definitions.",
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def del_badenc_defs(self: tk.Tk):
@@ -382,18 +393,21 @@ def del_badenc_defs(self: tk.Tk):
 
     # No unencodable definitions found
     if not found:
-        mb.showinfo(
+        self.op_infos.put((
             "No unencodable definitions",
             f"All definitions can encode properly to {bw.FILE_ENC}.",
-        )
+        ))
         return
 
     # There are now mass unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Unencodable definitions deleted",
         f"Found and deleted {found} non {bw.FILE_ENC} encodable " +
         "definitions.",
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def del_dupe_words(self: tk.Tk):
@@ -408,10 +422,10 @@ def del_dupe_words(self: tk.Tk):
 
     # No duplicates
     if not dupe_count:
-        mb.showinfo(
+        self.op_infos.put((
             "No duplicates found",
             "All words are only listed once.",
-            )
+            ))
         return
 
     # There were duplicates, so now convert and sort the set
@@ -420,10 +434,13 @@ def del_dupe_words(self: tk.Tk):
     self.words.sort()
 
     # There are now mass unsaved changes.
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Duplicates deleted",
         f"Found and removed {dupe_count:,} duplicate listings",
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
 
 
 def mass_auto_define(self: tk.Tk):
@@ -433,12 +450,12 @@ def mass_auto_define(self: tk.Tk):
         self (tk.Tk): The main GUI."""
 
     if not bw.HAVE_WORDNET:
-        mb.showerror(
+        self.op_errors.put((
             "No dictionary",
             "We need to download the NLTK wordnet English dictionary " +
             "for auto-defining. Please connect to the internet, then " +
             "restart the application.",
-        )
+        ))
         return
 
     # Find all words below the usage threshold and without a definition
@@ -453,11 +470,11 @@ def mass_auto_define(self: tk.Tk):
 
     # Nothing to do?
     if not total:
-        mb.showinfo(
+        self.op_infos.put((
             "No undefined rare words",
             "All words with a usage metric below the threshold already " +
             "have a popdef.",
-        )
+        ))
         return
 
     # Attempt to define all the words
@@ -471,11 +488,11 @@ def mass_auto_define(self: tk.Tk):
             fails += 1
 
     if fails == total:
-        mb.showerror(
+        self.op_errors.put((
             "No definitions found",
             f"Failed to define any of the {total:,} undefined " +
             "rare words found.",
-        )
+        ))
         return
 
     # If there were successes, sort the updated popdefs alphabetically
@@ -483,14 +500,17 @@ def mass_auto_define(self: tk.Tk):
     self.defs = dict(sorted(self.defs.items()))
 
     if fails:
-        mb.showwarning(
+        self.op_warnings.put((
             "Some definitions not found",
             f"Failed to define {fails:,} of the {total:,} undefined " +
             "rare words found.",
-        )
+        ))
 
     # There are now unsaved changes
-    self.mass_unsaved_changes(
+    self.op_infos.put((
         "Operation complete",
         f"Auto-defined {total - fails:,} words.",
-    )
+    ))
+
+    # Mass changes were made, mark as unsaved
+    self.unsaved_changes = True
