@@ -561,8 +561,11 @@ class Editor(tk.Tk):
         try:
             method()
         except Exception as e:
-            # TODO the GUI error notification no longer works
-            print(f"\n{type(e).__name__}: {e}")
+            self.op_errors.put((
+                "Unhandled exception",
+                "The threaded operation crashed. The exact error was, " +
+                f'"{type(e).__name__}: {e}"',
+                ))
 
     @property
     def idle_status(self) -> str:
