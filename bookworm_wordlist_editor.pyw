@@ -748,6 +748,9 @@ class Editor(tk.Tk):
         # Disable the GUI even while not threading, while the file dialog is open
         self.busy = True
 
+        # Set the status text appropriately
+        self.status_text = "Selecting game files..."
+
         # Ask the user for a directory if the current one is invalid, even if
         # the select argument is false.
         select = select or not bw.is_game_path_valid(self.game_path)
@@ -765,8 +768,9 @@ class Editor(tk.Tk):
 
                 # The user cancelled, but we aren't supposed to force. Abort.
                 if not do_or_die:
-                    # The GUI should no longer be disabled
+                    # The GUI should no longer be disabled or show loading status
                     self.busy = False
+                    self.status_text = self.idle_status
                     return
 
                 # The only remaining possibility is that the user cancelled,
