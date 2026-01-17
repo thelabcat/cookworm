@@ -2,7 +2,7 @@
 
 ![Screenshot](main_window_screenshot.png "The main app window")
 
-This program edits the wordlist and popup definitions for the game [BookWorm Deluxe by PopCap Games](https://oldgamesdownload.com/bookworm-deluxe/) released in 2006. I created this program after augmenting the wordlist more manually using [this free list of English words by dwyl](https://github.com/dwyl/english-words), but then discovering that it contained some errors, along with real words that I felt deserved a popdef.
+This program edits the wordlist and popup definitions for the game [BookWorm Deluxe by PopCap Games](https://oldgamesdownload.com/bookworm-deluxe/) released in 2006. I created this program after augmenting the wordlist more manually using [this free list of English words by dwyl](https://github.com/dwyl/english-words), but then discovering that it contained some errors, along with real words that I felt deserved a popdef. 
 
 ## Dependencies:
 This program relies on Python >= 3.10 (formally written in Python 3.13), plus the following non-native Python libraries, which can be installed using Pip:
@@ -44,48 +44,14 @@ Once the program loads the files, you should see a list of words in the left pan
 
 ## Information on antivirus false positives for PyInstaller executables:
 
-Recently, I discovered that multiple antivirus services are consistently flagging any and all Windows executables packaged with PyInstaller. This is a mistake: While malware could certainly be written in Python and subsequently packaged with PyInstaller into an exe, the exe would be malicious because of the packaged Python code, not because of PyInstaller. I've reported the problem to the antivirus services that I found false positive reporting forms for, but often only the specific app version was whitelisted, if anything at all. I tested BookWorm Deluxe Wordlist Editor v1.5.0 win x64 on April 27 in VirusTotal: It showed no malicious behavior from the application inside sandbox tests, and provided the following list of flags from security vendors.
-
-
-<table>
-    <tr>
-        <th>Antivirus service</th>
-        <th>Report for this PyInstaller EXE</th>
-    </tr>
-    <tr>
-        <td>Bkav Pro</td>
-        <td>W64.AIDetectMalware</td>
-    </tr>
-    <tr>
-        <td>Elastic</td>
-        <td>Malicious (moderate Confidence)</td>
-    </tr>
-    <tr>
-        <td>Jiangmin</td>
-        <td>TrojanSpy.Agent.afwu</td>
-    </tr>
-    <tr>
-        <td>Malwarebytes</td>
-        <td>Malware.AI.3767809634</td>
-    </tr>
-    <tr>
-        <td>SecureAge</td>
-        <td>Malicious</td>
-    </tr>
-    <tr>
-        <td>Skyhigh (SWG)</td>
-        <td>BehavesLike.Win64.Agent.tc</td>
-    </tr>
-</table>
-
-This is a known issue with, or rather limitation of, PyInstaller, and there is nothing its devs can really do about it. Since then, Malwarebytes in particular has tried to remedy the issue on their end, but a new bootloader update for PyInstaller could change that again. I'd like to thank them for that effort, in any case. Although I don't personally use their AV at the moment (since I mainly run Linux), it does seem an honorable thing for them to do IMO.
+Recently, I discovered that multiple antivirus services are consistently flagging any and all Windows executables packaged with PyInstaller. This is a false positive: While malware could certainly be written in Python and subsequently packaged with PyInstaller into an exe, the exe would be malicious because of the packaged Python code, not because of PyInstaller. I've reported the problem to the antivirus services that I found false positive reporting forms for, but often only the specific app version was whitelisted, if anything at all. It turns out that this is a known issue with, or rather limitation of, PyInstaller, and therefore there isn't anything its devs can permanently do about it. Long story short, a PyInstaller executable works by extracting from itself the Python interpreter, supporting libraries, and the script to run. What's more, it's doing this all in temporary storage. That looks rather suspicious to some antimalware heuristics, and understandably so. Since then, Malwarebytes in particular has tried to remedy the issue on their end, assumably by whitelisting the PyInstaller bootloader hash, but a new bootloader update for PyInstaller could change that. I'd like to thank Malwarebytes for their effort, in any case. They in particular were very quick to fix the false positive for my apps individually, even before the PyInstaller master fix. I don't use them personally, but that is good service.
 
 ## Bundling yourself:
-If you wish to bundle the application yourself with PyInstaller, you can run `pyinstaller_build.sh` in Windows Git Bash or Linux. It requires that:
+If you wish to bundle the application yourself with PyInstaller, you can run `pyinstaller_build.sh` in Windows Git Bash or Linux (or possibly MacOS). It requires that:
 - You have an internet connection.
 - The `python` and `pip` command point to Python 3.10 or newer and it's respective Pip tool (may point to Python 2.7 on some systems).
 - The venv package for that Python is installed.
-It will automatically set up a clean virtual environment with the program's dependencies and PyInstaller, update the word frequency list, then package the application.
+It will automatically set up a clean virtual environment with the program's dependencies and PyInstaller, update the word frequency list, then package the application. Be warned of [issue #18](https://github.com/thelabcat/bookworm-wordlist-editor/issues/18), though.
 
 Hope this helps!
 
