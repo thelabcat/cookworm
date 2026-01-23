@@ -1,0 +1,10 @@
+[tools]
+python = "3.14"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.install]
+description = "Install dependencies"
+alias = "i"
+run = "pip install -r requirements.txt"
