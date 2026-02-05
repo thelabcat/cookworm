@@ -49,7 +49,7 @@ PAPER_STYLE_MAP = {
     "fieldbackground": [  # ("focus", COLORS["selected_paper"]),
                         ("!disabled", COLORS["selected_paper"]),
                         ("disabled", COLORS["dark_char"])],
-    "foreground": [("selected", "focus", "white"),
+    "foreground": [  # ("selected", "focus", "white"),
                    ("!disabled", "black"),
                    ("disabled", COLORS["char"])],
 }
@@ -124,8 +124,8 @@ LIBRARY_THEME = {
 # Menubar parameters dict
 MENU_STYLING_KWARGS = {
     "bg": COLORS["dark_leather"],
-    # "fg": COLORS["selected_paper"],
+    "fg": "white",
     "activebackground": COLORS["leather"],
-    "activeforeground": "white",
+    "activeforeground": COLORS["gold"],
     "disabledforeground": COLORS["char"],
     }
