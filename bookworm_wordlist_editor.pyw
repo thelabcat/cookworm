@@ -285,7 +285,7 @@ class Editor(tk.Tk):
 
         self.search_clear_bttn = ttk.Button(
             self.search_frame,
-            text="🧹",
+            text="X",
             width=3,
             command=lambda: self.search_str.set("")
         )
