@@ -305,7 +305,7 @@ class Editor(tk.Tk):
             exportselection=False,
             bg=theme.COLORS["paper"],
             selectbackground=theme.COLORS["selected_paper"],
-            selectforeground="white"
+            selectforeground="black"
         )
 
         self.query_box.bind(
@@ -510,13 +510,8 @@ class Editor(tk.Tk):
 
             # The user clicked yes
             if answer:
-                self.save_files()
-                if self.unsaved_changes:
-                    mb.showerror(
-                        "Could not save",
-                        "Failed to save the files. Not exiting."
-                        )
-                    return
+                self.save_and_close()
+                return
 
         # Close the window
         self.destroy()
@@ -551,6 +546,30 @@ class Editor(tk.Tk):
         # The currently selected query and word may have had changes made
         self.update_query()
         self.selection_updated()
+
+    def save_and_close(self):
+        """Start a ticker to wait until the GUI is done saving before destroying it"""
+        self.save_files()
+        self.__save_and_close_waiting_tick()
+
+    def __save_and_close_waiting_tick(self):
+        """Continue waiting for saving to finish with after timers, or finish up afterward"""
+
+        # Keep waiting
+        if self.busy:
+            self.after(THREAD_WAITING_TICK_DELAY_MS, self.__save_and_close_waiting_tick)
+            return
+
+        # We are no longer busy, check if we successfully saved
+        if self.unsaved_changes:
+            mb.showerror(
+                "Could not save",
+                "Failed to save the files. Not exiting."
+                )
+            return
+
+        # We successfully saved, exit
+        self.destroy()
 
     def __busy_run(self, method: callable):
         """Run a method, and grey out the GUI until it's finished.
@@ -812,6 +831,7 @@ class Editor(tk.Tk):
 
         # Backup system
         # Recommend a backup if the files are older than this program
+        # No thread means we cannot change the status text here
         self.status_text = "Checking need for backup..."
         backup = backup or (
             # Make sure we have files to back up before timestamp reading
