@@ -7,4 +7,4 @@ _.python.venv = { path = ".venv", create = true }
 [tasks.install]
 description = "Install dependencies"
 alias = "i"
-run = "pip install -r requirements.txt"
+run = "pip install -U -r requirements.txt"
