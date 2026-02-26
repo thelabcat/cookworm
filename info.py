@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""BookWorm Deluxe Wordlist Editor - Help Information
+"""Cookworm - Help Information
 
-Various bits of program information, including an About dialogue.
+Various bits of program information, including an About dialogue for the GUI.
 
 Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
 
@@ -28,9 +28,9 @@ import theme
 
 OP_PATH = op.dirname(__file__)  # The path of the script file's containing folder
 
-PROGRAM_NAME = "BookWorm Deluxe Wordlist Editor"
+PROGRAM_NAME = "Cookworm"
 PROGRAM_VER = "3.0.0"
-ICON_PATH = op.join(OP_PATH, "bookworm_wordlist_editor.png")
+ICON_PATH = op.join(OP_PATH, "cookworm.png")
 LICENSE_NAME = "Apache License version 2.0"
 
 INITIAL_COMMIT_DATE_STR = "Wed Mar 27 13:07:57 2024 -0400"

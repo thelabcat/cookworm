@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""BookWorm Deluxe Wordlist Editor configuration I/O
+"""Cookworm configuration I/O
 
 Loads and saves the configuration for the aforementioned.
 
@@ -23,18 +23,18 @@ import os
 import os.path as op
 from pathlib import Path
 import yaml
-import bookworm_utils as bw
+import cookworm as cw
 
 # The text encoding of the config file
 CONFIG_ENC = "utf-8"
 
 
 # The location of the config file
-CONFIG_FILE = Path("~", ".bookworm_wordlist_editor", "config.yaml").expanduser()
+CONFIG_FILE = Path("~", ".cookworm", "config.yaml").expanduser()
 
 # Default values for the config
 CONFIG_DEFAULTS = {
-    "gamePath": str(bw.GAME_PATH_OS_DEFAULT)
+    "gamePath": str(cw.GAME_PATH_OS_DEFAULT)
     }
 
 
@@ -55,17 +55,17 @@ def choose_best_game_path(suggestion: Path | str) -> Path:
     # The environment variable points to a nonexistent path
     if not suggestion.exists():
         print(msg_part, "but it does not exist.")
-        return bw.GAME_PATH_OS_DEFAULT
+        return cw.GAME_PATH_OS_DEFAULT
 
     # The environment variable points to a real path, but not a valid game path
-    if not bw.is_game_path_valid(suggestion):
+    if not cw.is_game_path_valid(suggestion):
         # The default game path is valid
-        if bw.is_game_path_valid(bw.GAME_PATH_OS_DEFAULT):
+        if cw.is_game_path_valid(cw.GAME_PATH_OS_DEFAULT):
             print(
                 msg_part,
-                f"but it is not valid while {bw.GAME_PATH_OS_DEFAULT} is.",
+                f"but it is not valid while {cw.GAME_PATH_OS_DEFAULT} is.",
                 )
-            return bw.GAME_PATH_OS_DEFAULT
+            return cw.GAME_PATH_OS_DEFAULT
 
         # The default game path isn't any better than the one provided
         print(

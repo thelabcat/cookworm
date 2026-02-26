@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-"""BookWorm Utilities
+"""Cookworm
 
 Tools for loading, editing, and saving the wordlist and popdefs of
 BookWorm Deluxe.
