@@ -24,12 +24,12 @@ import time
 import webbrowser
 import tkinter as tk
 from tkinter import ttk
-import theme
+from . import theme
 
 OP_PATH = op.dirname(__file__)  # The path of the script file's containing folder
 
 PROGRAM_NAME = "Cookworm"
-PROGRAM_VER = "3.0.0"
+PROGRAM_VER = "4.0.0"
 ICON_PATH = op.join(OP_PATH, "cookworm.png")
 LICENSE_NAME = "Apache License version 2.0"
 
@@ -48,6 +48,8 @@ class URL:
     report_issue = homepage + "/issues"
     license = "https://www.apache.org/licenses/LICENSE-2.0"
 
+if not op.exists(ICON_PATH):
+    print("Icon path does not exist!")
 
 class AboutDialogue(tk.Toplevel):
     """Dialogue to show information about the program"""

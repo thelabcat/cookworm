@@ -54,7 +54,7 @@ echo "Updating the English word frequency list"
 curl https://raw.githubusercontent.com/rspeer/wordfreq/master/wordfreq/data/large_en.msgpack.gz -o large_en.msgpack.gz
 
 echo "Building exe"
-pyinstaller -F --icon=cookworm.ico --add-data cookworm.png:. --add-data large_en.msgpack.gz:wordfreq/data/ --name "$output_name" cookworm_gui.pyw 2>&1 | tee pyinstaller_build_log.txt
+pyinstaller -F --icon=src/cookworm/cookworm.ico --add-data src/cookworm/cookworm.png:./cookworm/ --add-data large_en.msgpack.gz:./cookworm/wordfreq/data/ --hidden-import cookworm.__main__ --name "$output_name" src/cookworm_gui_wrapper.pyw 2>&1 | tee pyinstaller_build_log.txt
 
 echo "Cleaning up exe build residue"
 rm -rf build

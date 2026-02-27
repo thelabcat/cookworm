@@ -3,7 +3,7 @@
 
 An application for editing the word list and popdefs in BookWorm Deluxe.
 
-Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
+Copyright 2026 Wilbur Jaywright d.b.a. Marswide BGL.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ from tkinter import simpledialog as dialog
 from tkinter import ttk
 import time
 import webbrowser
-import cookworm as cw
-import config_io
-import theme
-import gui_heavy_ops
-import info
+from . import utils
+from . import config_io
+from . import theme
+from . import gui_heavy_ops
+from . import info
 
 # The path of the script file's containing folder
 OP_PATH = op.dirname(__file__)
@@ -681,7 +681,7 @@ class Editor(tk.Tk):
             "TProgressbar",
             text=RARITY_DISP_PREFIX +
             f"{self.rarity_disp_double.get():.02f} / {RARITY_DISP_MAX}",
-            background=RARE_COLS[RARITY_DISP_MAX - self.rarity_disp_double.get() < cw.RARE_THRESH],
+            background=RARE_COLS[RARITY_DISP_MAX - self.rarity_disp_double.get() < utils.RARE_THRESH],
             )
 
     def unique_disable_handlers(self):
@@ -750,12 +750,12 @@ class Editor(tk.Tk):
     @property
     def wordlist_abs_path(self) -> str:
         """The absolute path of the wordlist file"""
-        return op.join(self.game_path, cw.WORDLIST_FILE)
+        return op.join(self.game_path, utils.WORDLIST_FILE)
 
     @property
     def popdefs_abs_path(self) -> str:
         """The absolute path of the popdefs file"""
-        return op.join(self.game_path, cw.POPDEFS_FILE)
+        return op.join(self.game_path, utils.POPDEFS_FILE)
 
     def load_files(self, select: bool = True, do_or_die: bool = False):
         """Load the wordlist and the popdefs (threaded)
@@ -775,13 +775,13 @@ class Editor(tk.Tk):
 
         # Ask the user for a directory if the current one is invalid, even if
         # the select argument is false.
-        select = select or not cw.is_game_path_valid(self.game_path)
+        select = select or not utils.is_game_path_valid(self.game_path)
 
         # While we need to select something
         while select:
             while True:  # Keep asking for an input
                 response = filedialog.askdirectory(
-                    title="Game directory", initialdir=cw.deepest_valid_path(self.game_path)
+                    title="Game directory", initialdir=utils.deepest_valid_path(self.game_path)
                 )
 
                 # We got a response, so break the loop.
@@ -805,7 +805,7 @@ class Editor(tk.Tk):
                     sys.exit()
 
             # If the game path is valid, we are no longer selecting
-            select = not cw.is_game_path_valid(response)
+            select = not utils.is_game_path_valid(response)
             if select:
                 mb.showerror(
                     "Invalid directory",
@@ -835,7 +835,7 @@ class Editor(tk.Tk):
         self.status_text = "Checking need for backup..."
         backup = backup or (
             # Make sure we have files to back up before timestamp reading
-            cw.is_game_path_valid(self.game_path) and
+            utils.is_game_path_valid(self.game_path) and
 
             # Files are older than this program
             min((
@@ -858,7 +858,7 @@ class Editor(tk.Tk):
             success (bool): Wether or not we were able to backup."""
 
         # Catch for the files having been deleted while editing them
-        if not cw.is_game_path_valid(self.game_path):
+        if not utils.is_game_path_valid(self.game_path):
             mb.showerror(
                 "Backup failed",
                 "Could not back up the original files " +
@@ -892,7 +892,7 @@ class Editor(tk.Tk):
         """
         return filedialog.askopenfile(
             title="Select human-readable list of words",
-            filetypes=cw.TEXT_FILETYPE,
+            filetypes=utils.TEXT_FILETYPE,
         )
 
     def selection_updated(self):
@@ -911,7 +911,7 @@ class Editor(tk.Tk):
         # Otherwise, load and display usage statistics
         # and add quotes around the main display
         else:
-            usage = cw.get_word_usage(self.selected_word)
+            usage = utils.get_word_usage(self.selected_word)
             self.rarity_disp_double.set(RARITY_DISP_MAX - usage)
 
             self.word_disp_str.set(f'"{self.selected_word}"')
@@ -982,7 +982,7 @@ class Editor(tk.Tk):
             word = ""
 
         # The word is in our current query, so select and view it
-        if word and cw.binary_search(self.words, word) is not None:
+        if word and utils.binary_search(self.words, word) is not None:
             word_query_index = self.query_list.get().index(word)
             self.query_box.selection_clear(0, tk.END)
             self.query_box.selection_set(word_query_index)
@@ -1039,7 +1039,7 @@ class Editor(tk.Tk):
         """Update the stored definition for a word"""
 
         # Filter definition to only spaces, and remove surrounding whitespace.
-        def_entry = cw.WHITESPACE_PATTERN.sub(
+        def_entry = utils.WHITESPACE_PATTERN.sub(
             " ",
             self.def_field.get("0.0", tk.END).strip(),
             )
@@ -1048,12 +1048,12 @@ class Editor(tk.Tk):
         if def_entry:
             # Ensure the new definition will encode properly
             try:
-                def_entry.encode(cw.FILE_ENC)
+                def_entry.encode(utils.FILE_ENC)
             except UnicodeEncodeError:
                 mb.showerror(
                     "Unsaveable definition",
                     "The definition contains one or more characters that " +
-                    f"cannot be encoded to {cw.FILE_ENC}."
+                    f"cannot be encoded to {utils.FILE_ENC}."
                     )
                 return
 
@@ -1086,17 +1086,17 @@ class Editor(tk.Tk):
         Returns:
             result (bool): Is the word of valud length?"""
 
-        valid = cw.WORD_LENGTH_MIN <= len(word) <= cw.WORD_LENGTH_MAX
+        valid = utils.WORD_LENGTH_MIN <= len(word) <= utils.WORD_LENGTH_MAX
 
         if not valid and notify:
             # Dialog auto-selects the word "short" or "long" based on wether
             # the invalid length was a too long case or not.
             mb.showerror(
                 "Word is too " +
-                ("short", "long")[int(len(word) > cw.WORD_LENGTH_MAX)],
+                ("short", "long")[int(len(word) > utils.WORD_LENGTH_MAX)],
 
-                f"Word must be between {cw.WORD_LENGTH_MIN:,} " +
-                f"and {cw.WORD_LENGTH_MAX:,} letters long.",
+                f"Word must be between {utils.WORD_LENGTH_MIN:,} " +
+                f"and {utils.WORD_LENGTH_MAX:,} letters long.",
             )
 
         return valid
@@ -1121,7 +1121,7 @@ class Editor(tk.Tk):
             return
 
         # If the word really is new, add it.
-        if not cw.binary_search(self.words, new):
+        if not utils.binary_search(self.words, new):
             # Add the new word
             self.words.append(new)
             self.words.sort()
@@ -1208,7 +1208,7 @@ class Editor(tk.Tk):
                 Defaults to True, silence the error."""
 
         # Delete the word
-        if cw.binary_search(self.words, word) is not None:
+        if utils.binary_search(self.words, word) is not None:
             self.words.remove(word)
         elif not quiet:
             mb.showerror(
@@ -1246,7 +1246,7 @@ class Editor(tk.Tk):
         if self.selected_word == NO_WORD:
             return
 
-        result, success = cw.build_auto_def(self.selected_word)
+        result, success = utils.build_auto_def(self.selected_word)
         if not success:
             mb.showerror("Could not autodefine", result)
             return
@@ -1268,6 +1268,12 @@ class Editor(tk.Tk):
             )
 
 
-# Create an editor window
-if __name__ == "__main__":
+def main():
+    """Launch the GUI application"""
     Editor()
+    return 0
+
+
+# The module is being run directly
+if __name__ == "__main__":
+    sys.exit(main())

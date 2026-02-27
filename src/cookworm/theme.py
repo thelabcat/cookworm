@@ -1,6 +1,6 @@
 """Theme variables
 
-Colors and other settings to theme the GUIs with.
+Cookworm - Colors and other settings to theme the GUIs with.
 
 Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
 

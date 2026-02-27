@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-"""Cookworm
+"""Cookworm Utils
 
 Tools for loading, editing, and saving the wordlist and popdefs of
 BookWorm Deluxe.
@@ -16,7 +16,7 @@ The rules for unpacking the dictionary are simple:
 As for the popdefs format, each line is: "WORD\t(part of speech abbreviation)
 definiton; another definition"
 
-Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
+Copyright 2026 Wilbur Jaywright d.b.a. Marswide BGL.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

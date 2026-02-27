@@ -21,7 +21,7 @@ S.D.G."""
 
 import tkinter as tk
 from typing import TextIO
-import cookworm as cw
+from . import utils
 
 
 def __parse_alpha_file(self: tk.Tk, f: TextIO):
@@ -94,20 +94,20 @@ def load_files(self: tk.Tk):
         self (tk.Tk): The main GUI."""
 
     # First, load the wordlist
-    self.status_text = f"Loading {cw.WORDLIST_FILE}..."
+    self.status_text = f"Loading {utils.WORDLIST_FILE}..."
     with open(
-        self.wordlist_abs_path, encoding=cw.FILE_ENC
+        self.wordlist_abs_path, encoding=utils.FILE_ENC
     ) as f:
-        self.words = sorted(cw.unpack_wordlist(f.read().strip()))
+        self.words = sorted(utils.unpack_wordlist(f.read().strip()))
 
     # Then, load the popdefs
-    self.status_text = f"Loading {cw.POPDEFS_FILE}..."
+    self.status_text = f"Loading {utils.POPDEFS_FILE}..."
     with open(
-        self.popdefs_abs_path, encoding=cw.FILE_ENC
+        self.popdefs_abs_path, encoding=utils.FILE_ENC
     ) as f:
         self.defs = dict(
             sorted(
-                cw.unpack_popdefs(f.read().strip()).items()
+                utils.unpack_popdefs(f.read().strip()).items()
                 )
             )
 
@@ -132,35 +132,35 @@ def save_files(self: tk.Tk, backup: bool = False):
         self.make_backup()
 
     # First, encode the wordlist
-    self.status_text = f"Encoding {cw.WORDLIST_FILE}..."
+    self.status_text = f"Encoding {utils.WORDLIST_FILE}..."
 
     # Ensure that the wordlist encodes properly
     # Technically, this should never fail because a word should always be alpha
     try:
-        encoded_wordlist = cw.pack_wordlist(sorted(self.words))\
-            .encode(cw.FILE_ENC)
+        encoded_wordlist = utils.pack_wordlist(sorted(self.words))\
+            .encode(utils.FILE_ENC)
     except UnicodeEncodeError:
         # Failure to encode stops us from even trying to open the file
         self.op_errors.put((
             "File encoding error",
             "One or more word entries contain characters that couldn't" +
-            f"be encoded in {cw.FILE_ENC}."
+            f"be encoded in {utils.FILE_ENC}."
             ))
         return
 
     # Then, encode the popdefs
-    self.status_text = f"Encoding {cw.POPDEFS_FILE}..."
+    self.status_text = f"Encoding {utils.POPDEFS_FILE}..."
 
     # Ensure that the popdefs encodes properly
     try:
-        encoded_popdefs = cw.pack_popdefs(dict(sorted(self.defs.items())))\
-            .encode(cw.FILE_ENC)
+        encoded_popdefs = utils.pack_popdefs(dict(sorted(self.defs.items())))\
+            .encode(utils.FILE_ENC)
     except UnicodeEncodeError:
         # Failure to encode stops us from even trying to open the file
         self.op_errors.put((
             "File encoding error",
             "One or more definition entries contain characters that couldn't" +
-            f"be encoded in {cw.FILE_ENC}."
+            f"be encoded in {utils.FILE_ENC}."
             ))
         return
 
@@ -190,7 +190,7 @@ def mass_add_words(self: tk.Tk, f: TextIO):
     self.status_text = "Filtering to only new words..."
     new_words = [
         word for word in alpha_words
-        if cw.binary_search(self.words, word) is None
+        if utils.binary_search(self.words, word) is None
     ]
     already_have = len(alpha_words) - len(new_words)
 
@@ -222,8 +222,8 @@ def mass_add_words(self: tk.Tk, f: TextIO):
         self.op_errors.put((
             "Invalid word lengths",
             f"All {len(new_words):,} new words were rejected because " +
-            f"they were not between {cw.WORD_LENGTH_MIN:,} and " +
-            f"{cw.WORD_LENGTH_MAX:,} letters long.",
+            f"they were not between {utils.WORD_LENGTH_MIN:,} and " +
+            f"{utils.WORD_LENGTH_MAX:,} letters long.",
         ))
         return
 
@@ -232,7 +232,7 @@ def mass_add_words(self: tk.Tk, f: TextIO):
         self.op_infos.put((
             "Some invalid word lengths",
             f"{len_invalid:,} words were rejected because they were not " +
-            f"between {cw.WORD_LENGTH_MIN:,} and {cw.WORD_LENGTH_MAX:,} " +
+            f"between {utils.WORD_LENGTH_MIN:,} and {utils.WORD_LENGTH_MAX:,} " +
             "letters long.",
         ))
 
@@ -270,7 +270,7 @@ def mass_delete_words(self: tk.Tk, f: TextIO):
     self.status_text = "Finding words we do have..."
     old_words = [
         word for word in del_words
-        if cw.binary_search(self.words, word) is not None
+        if utils.binary_search(self.words, word) is not None
     ]
     dont_have = len(del_words) - len(old_words)
 
@@ -320,8 +320,8 @@ def del_invalid_len_words(self: tk.Tk):
     if not invalid:
         self.op_infos.put((
             "No invalid length words",
-            f"All words are already between {cw.WORD_LENGTH_MIN:,} " +
-            f"and {cw.WORD_LENGTH_MAX:,} letters long.",
+            f"All words are already between {utils.WORD_LENGTH_MIN:,} " +
+            f"and {utils.WORD_LENGTH_MAX:,} letters long.",
         ))
         return
 
@@ -351,7 +351,7 @@ def del_orphaned_defs(self: tk.Tk):
 
     self.status_text = "Finding orphaned definitions..."
     orphaned = [
-        word for word in self.defs if cw.binary_search(self.words, word) is None
+        word for word in self.defs if utils.binary_search(self.words, word) is None
     ]
 
     # No orphaned definitions found
@@ -386,7 +386,7 @@ def del_badenc_defs(self: tk.Tk):
     found = 0
     for word, definition in self.defs.copy().items():
         try:
-            definition.encode(cw.FILE_ENC)
+            definition.encode(utils.FILE_ENC)
         except UnicodeEncodeError:
             del self.defs[word]
             found += 1
@@ -395,14 +395,14 @@ def del_badenc_defs(self: tk.Tk):
     if not found:
         self.op_infos.put((
             "No unencodable definitions",
-            f"All definitions can encode properly to {cw.FILE_ENC}.",
+            f"All definitions can encode properly to {utils.FILE_ENC}.",
         ))
         return
 
     # There are now mass unsaved changes
     self.op_infos.put((
         "Unencodable definitions deleted",
-        f"Found and deleted {found} non {cw.FILE_ENC} encodable " +
+        f"Found and deleted {found} non {utils.FILE_ENC} encodable " +
         "definitions.",
     ))
 
@@ -449,7 +449,7 @@ def mass_auto_define(self: tk.Tk):
     Args:
         self (tk.Tk): The main GUI."""
 
-    if not cw.HAVE_WORDNET:
+    if not utils.HAVE_WORDNET:
         self.op_errors.put((
             "No dictionary",
             "We need to download the NLTK wordnet English dictionary " +
@@ -463,8 +463,8 @@ def mass_auto_define(self: tk.Tk):
     defined_words = tuple(self.defs)
     words_to_define = [
         word for word in self.words
-        if cw.get_word_usage(word) < cw.RARE_THRESH
-        and cw.binary_search(defined_words, word) is None
+        if utils.get_word_usage(word) < utils.RARE_THRESH
+        and utils.binary_search(defined_words, word) is None
     ]
     total = len(words_to_define)
 
@@ -481,7 +481,7 @@ def mass_auto_define(self: tk.Tk):
     self.status_text = f"Auto-defining {total:,} words..."
     fails = 0
     for word in words_to_define:
-        result, success = cw.build_auto_def(word)
+        result, success = utils.build_auto_def(word)
         if success:
             self.defs[word] = result
         else:
