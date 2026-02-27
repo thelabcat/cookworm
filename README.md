@@ -10,12 +10,12 @@ This program relies on Python >= 3.10 (formally written in Python 3.14), plus th
 - [wordfreq](https://pypi.org/project/wordfreq/)
 - [PyYAML](https://pypi.org/project/pyyaml/)
 
-You can find executables with bundled Python and the dependencies in the Releases page of this repository.
+You can find a Windows executable with bundled Python and the dependencies in the Releases page of this repository.
+
+You can also install the app from PYPI using `pip install cookworm`, which will automatically grab the dependencies. This one works on Linux, and hopefully on MacOS too. And yes, I did make the base parsing and utility functions directly accessible from `import cookworm` if you want to do some scripting yourself with that.
 
 ## Usage:
-To run from source, install Python 3.10 or newer, and then the dependencies, then use Python to run the .pyw program.
-
-For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
+NOTE: For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
 
 ### Program operation:
 When the program opens, it will default to opening the BookWorm Deluxe folder in the expected system location per your platform, or the last location that it was successfully opened to, whichever seems better. The memory for that last opened location is stored in `~/.cookworm/config.yaml`. You can safely delete this file to reset the configuration to the defaults. If on Linux or MacOS, it will assume the default Wine prefix in your user directory. If it does not find the wordlist.txt and popdefs.txt files in this default location, or the default location doesn't exist, it will ask you to choose the BookWorm Deluxe folder manually.
@@ -51,7 +51,7 @@ If you wish to bundle the application yourself with PyInstaller, you can run `py
 - You have an internet connection.
 - The `python` and `pip` command point to Python 3.10 or newer and it's respective Pip tool (may point to Python 2.7 on some systems).
 - The venv package for that Python is installed.
-It will automatically set up a clean virtual environment with the program's dependencies and PyInstaller, update the word frequency list, then package the application. Be warned of [issue #18](https://github.com/thelabcat/bookworm-wordlist-editor/issues/18), though.
+It will automatically set up a clean virtual environment with the program's dependencies and PyInstaller, update the word frequency list, then package the application. If bundling on Linux, be warned of [issue #18](https://github.com/thelabcat/bookworm-wordlist-editor/issues/18).
 
 Hope this helps!
 
