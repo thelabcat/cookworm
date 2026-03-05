@@ -29,7 +29,7 @@ from . import theme
 OP_PATH = op.dirname(__file__)  # The path of the script file's containing folder
 
 PROGRAM_NAME = "Cookworm"
-PROGRAM_VER = "4.0.0"
+PROGRAM_VER = "4.0.1"
 ICON_PATH = op.join(OP_PATH, "cookworm.png")
 LICENSE_NAME = "Apache License version 2.0"
 
