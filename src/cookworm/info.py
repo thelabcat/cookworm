@@ -44,7 +44,7 @@ INITIAL_COMMIT_TIMESTAMP = time.mktime(
 class URL:
     """URLs to various places"""
 
-    homepage = "https://github.com/thelabcat/bookworm-wordlist-editor"
+    homepage = "https://github.com/thelabcat/cookworm"
     how_to_use = homepage + "?tab=readme-ov-file#usage"
     report_issue = homepage + "/issues"
     license = "https://www.apache.org/licenses/LICENSE-2.0"
