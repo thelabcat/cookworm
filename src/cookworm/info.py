@@ -26,7 +26,8 @@ import tkinter as tk
 from tkinter import ttk
 from . import theme
 
-OP_PATH = op.dirname(__file__)  # The path of the script file's containing folder
+# The path of the script file's containing folder
+OP_PATH = op.dirname(__file__)
 
 PROGRAM_NAME = "Cookworm"
 PROGRAM_VER = "4.0.1"
@@ -37,7 +38,7 @@ INITIAL_COMMIT_DATE_STR = "Wed Mar 27 13:07:57 2024 -0400"
 COMMIT_DATE_PARSEFORM = "%a %b %d %H:%M:%S %Y %z"
 INITIAL_COMMIT_TIMESTAMP = time.mktime(
     time.strptime(INITIAL_COMMIT_DATE_STR, COMMIT_DATE_PARSEFORM)
-    )
+)
 
 
 class URL:
@@ -48,8 +49,10 @@ class URL:
     report_issue = homepage + "/issues"
     license = "https://www.apache.org/licenses/LICENSE-2.0"
 
+
 if not op.exists(ICON_PATH):
     print("Icon path does not exist!")
+
 
 class AboutDialogue(tk.Toplevel):
     """Dialogue to show information about the program"""
@@ -105,7 +108,7 @@ class AboutDialogue(tk.Toplevel):
         self.license_link.grid(row=0, column=1, sticky=tk.NSEW)
         self.license_link.bind(
             "<Button-1>", lambda e: webbrowser.open(URL.license)
-            )
+        )
         self.license_frame.columnconfigure(0, weight=1)
         self.license_frame.columnconfigure(1, weight=1)
 
@@ -118,13 +121,15 @@ class AboutDialogue(tk.Toplevel):
             anchor=tk.CENTER,
         )
         self.homepage_link.grid(row=4, sticky=tk.EW, padx=10, pady=5)
-        self.homepage_link.bind("<Button-1>", lambda e: webbrowser.open(URL.homepage))
+        self.homepage_link.bind(
+            "<Button-1>", lambda e: webbrowser.open(URL.homepage))
 
         # Credit to Whom it is always due
         ttk.Label(self, text="S.D.G.").grid(row=5, padx=10, pady=10)
 
         # Ok button
-        ttk.Button(self, text="Ok", command=self.destroy).grid(row=6, padx=10, pady=10)
+        ttk.Button(self, text="Ok", command=self.destroy).grid(
+            row=6, padx=10, pady=10)
 
         self.columnconfigure(0, weight=1)
 
