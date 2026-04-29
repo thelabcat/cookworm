@@ -45,18 +45,19 @@ from wordfreq import zipf_frequency
 
 # Language and charset information
 DOS_LINE_ENDING = "\r\n"
-FILE_ENC = "iso 8859-15"
+"""Line ending used by MS-DOS and by extension BookWorm"""
 
-# RegEx pattern to match one or more of any whitespace character
+FILE_ENC = "iso 8859-15"
+"""File encoding used by BookWorm"""
+
 WHITESPACE_PATTERN = re.compile(r"\s+")
+"""RegEx pattern to match one or more of any whitespace character"""
 
 # Make sure we have the NLTK wordnet for our English dictionary
 # Note: Without internet, nltk.download will quietly fail and return False.
 # With internet, it will return True even if we already had wordnet.
 nltk.download("wordnet")
 try:
-    # Word part-of-speech's that NLTK wordnet may return, and their
-    # abbreviations to use for in-game definitions.
     WORD_POS = {
         wordnet.NOUN: "n.",
         wordnet.VERB: "v.",
@@ -67,7 +68,10 @@ try:
         # "Preposition": "prep.",
         # "Conjugation": "conj."
     }
+    """Word part-of-speech's that NLTK wordnet may return, and their abbreviations to use for in-game definitions."""
+
     HAVE_WORDNET = True
+    """Wordnet NLTK was successfully imported? (yes)"""
 
 # Referencing word part-of-speech's in wordnet when we don't have wordnet
 # raises a LookupError.
@@ -75,37 +79,48 @@ except LookupError:
     warnings.warn("NLTK wordnet load failed with LookupError.")
     print("Auto definition will not be available.")
     WORD_POS = None
+    """Would be word part-of-speech's that NLTK wordnet could return, but wordnet did not import"""
+
     HAVE_WORDNET = False
+    """WordNet NLTK was successfully imported? (no)"""
 
-LANG = "en"  # Language to use when checking word rarity
+LANG = "en"
+"""Language to use when checking word rarity"""
 
-# Words with usage less than this should probably get definitions
 RARE_THRESH = 3.5
+"""Words with usage less than this should probably get definitions"""
 
 # BookWorm Deluxe's internal word length delimiters
 WORD_LENGTH_MIN = 3
+"""BookWorm won't allow moves less than three characters"""
+
 WORD_LENGTH_MAX = 12
+"""BookWorm can't handle moves longer than 12 tiles"""
 
-# Default game path inside C drive
-GAME_PATH_C_DEFAULT = Path("Program Files", "PopCap Games", "BookWorm Deluxe")
+_GAME_PATH_C_DEFAULT = Path("Program Files", "PopCap Games", "BookWorm Deluxe")
+"""Default game path inside the Microsoft C drive"""
 
-# Default game path for a *NIX platform
-GAME_PATH_NIX_DEFAULT = Path("~", ".wine", "drive_c")\
-    .expanduser().joinpath(GAME_PATH_C_DEFAULT)
+GAME_PATH_NIX_DEFAULT = (
+    Path("~", ".wine", "drive_c").expanduser().joinpath(_GAME_PATH_C_DEFAULT)
+)
+"""Default game path for a *NIX platform"""
 
-# Default game path based on the OS
 GAME_PATH_OS_DEFAULT = {
     "Linux": GAME_PATH_NIX_DEFAULT,
     "Darwin": GAME_PATH_NIX_DEFAULT,
-    "Windows": op.join("C:\\", GAME_PATH_C_DEFAULT),
+    "Windows": op.join("C:\\", _GAME_PATH_C_DEFAULT),
 }[platform.system()]
+"""Default game path, automatically based on the OS"""
 
-# Tkinter file dialog types filter for plain text files
 TEXT_FILETYPE = [("Plain text", ".txt")]
+"""Tkinter file dialog types filter for plain text files"""
 
 # Names of the two game files we can edit
 WORDLIST_FILE = "wordlist.txt"
+"""File name of the entire list of words that BookWorm Deluxe knows"""
+
 POPDEFS_FILE = "popdefs.txt"
+"""File name of the pop-up definitions that BookWorm Deluxe shows when it has one"""
 
 
 def is_game_path_valid(path: str) -> bool:
@@ -245,12 +260,12 @@ def pack_popdefs(defs: dict[str, str]) -> str:
     Returns:
         popdefs (str): The contents of a new popdefs.txt"""
 
-    return DOS_LINE_ENDING.join(
-        [
-            word.upper() + "\t" + definition
-            for word, definition in defs.items()
-        ]
-    ) + DOS_LINE_ENDING  # The original files ended with a blank line
+    return (
+        DOS_LINE_ENDING.join(
+            [word.upper() + "\t" + definition for word, definition in defs.items()]
+        )
+        + DOS_LINE_ENDING
+    )  # The original files ended with a blank line
 
 
 def build_auto_def(word: str) -> str | None:
@@ -274,8 +289,7 @@ def build_auto_def(word: str) -> str | None:
     try:
         synsets = wordnet.synsets(word)
     except LookupError:
-        return "LookupError raised. " +\
-            "The NLTK wordnet package is missing.", False
+        return "LookupError raised. " + "The NLTK wordnet package is missing.", False
 
     if not synsets:
         return f"No definition found for '{word}'.", False
@@ -288,16 +302,19 @@ def build_auto_def(word: str) -> str | None:
         else:
             pos_groups[pos].append(ss.definition())
 
-    return "; ".join(  # type groups are split by semicolon
-        f"({WORD_POS[pos]}) "  # Each type group starts with the type
-        +
-        # Definitions within a group are also split by semicolon
-        # Each definition should also be capitalized
-        "; ".join((d.capitalize() for d in definitions))
-        # Iterate through type groups with the definitions in them
-        for pos, definitions in pos_groups.items()
-        # The last definition needs a period.
-    ) + ".", True  # Report success
+    return (
+        "; ".join(  # type groups are split by semicolon
+            f"({WORD_POS[pos]}) " +  # Each type group starts with the type
+            # Definitions within a group are also split by semicolon
+            # Each definition should also be capitalized
+            "; ".join((d.capitalize() for d in definitions))
+            # Iterate through type groups with the definitions in them
+            for pos, definitions in pos_groups.items()
+            # The last definition needs a period.
+        )
+        + ".",
+        True,
+    )  # Report success
 
 
 def get_word_usage(word: str) -> float:

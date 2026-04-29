@@ -8,7 +8,7 @@ packages = ["src/cookworm"]
 
 [project]
 name = "cookworm"
-version = "4.0.1"
+version = "4.1.0"
 keywords = ["puzzles", "app", "games", "BookWorm", "mod", "modding", "editor"]
 authors = [
   { name="Wilbur Jaywright", email="zargulthewizard@outlook.com" },
