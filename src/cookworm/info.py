@@ -30,7 +30,7 @@ from . import theme
 OP_PATH = op.dirname(__file__)
 
 PROGRAM_NAME = "Cookworm"
-PROGRAM_VER = "4.0.1"
+PROGRAM_VER = "4.1.0"
 ICON_PATH = op.join(OP_PATH, "cookworm.png")
 LICENSE_NAME = "Apache License version 2.0"
 
