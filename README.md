@@ -22,16 +22,16 @@ In the `src` directory, either run `python -m cookworm` or `python cookworm_gui_
 ## Usage
 NOTE: For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
 
-When the program opens, it will default to opening the BookWorm Deluxe folder in the expected system location per your platform, or the last location that it was successfully opened to, whichever seems better. The memory for that last opened location is stored in `~/.cookworm/config.yaml`. You can safely delete this file to reset the configuration to the defaults. If on Linux or MacOS, it will assume the default Wine prefix in your user directory. If it does not find the wordlist.txt and popdefs.txt files in this default location, or the default location doesn't exist, it will ask you to choose the BookWorm Deluxe folder manually.
+When the program opens, it will default to opening the BookWorm Deluxe folder in the expected system location per your platform, or the last location that it was successfully opened to, whichever seems better. The memory for that last opened location is stored in `~/.cookworm/config.yaml`. You can safely delete this file to reset the configuration to the defaults. If on Linux or MacOS, the program will assume the default Wine prefix in your user directory. If it does not find the `wordlist.txt` and `popdefs.txt` files in this default location, or the default location doesn't exist, it will ask you to choose the BookWorm Deluxe folder manually.
 
 Once the program loads the files, you should see a list of words in the left pane. The bottom of the window shows the current number of words and popdefs in memory when idle, and status information on any currently running threaded operations.
-- Select a word to see its usage rarity according to wordfreq (8.00 / 8 for no wordfreq entry), and its current popdef (blank for no popdef). If TKinter is running natively (so, not on Windows), it has color changing function as well: If the usage frequency is below an arbitrary value where I think it might need a popdef, the meter will be sapphire blue. Otherwise, it will be paper brown. While a word is selected you can:
+- Click on a word to see its usage rarity according to wordfreq (8.00 / 8 for no wordfreq entry), and its current popdef (blank for no popdef). The usage rarity meter has a color changing function as well: If the usage frequency is below an arbitrary value where I think it might need a popdef, the meter will be sapphire blue. Otherwise, it will be paper brown. While a word is selected, you can:
     - Edit the popdef and save it. Note that if you select a different word before saving the definition, it will reset.
     - Reset the popdef to what it was the last time you saved it.
     - Auto-create a popdef using the NLTK wordnet English dictionary.
     - Delete the word from the wordlist.
-- You can search for a word with the search box, using the X button to clear the search query.
-- You can add a new word to the wordlist with the Add word button. Once added, it will become selected.
+- Use the search box to find a particular word, using the X button to clear the search query.
+- Click the "Add word" button to add a new word to the wordlist. Once added, it will become selected.
 - The File menu provides the following operations:
     - Open (Ctrl + O): Open a different word list and popdefs file pair.
     - Reload (Ctrl + R): Reload the current word list and popdefs file pair, reversing all your changes.
