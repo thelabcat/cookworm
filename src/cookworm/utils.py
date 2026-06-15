@@ -365,3 +365,15 @@ def deepest_valid_path(path: str | Path) -> Path:
         path = path.parent
 
     return path
+
+
+def is_len_valid(word: str) -> bool:
+    """Check if a word's length is valid.
+
+    Args:
+        word (str): The word to check.
+
+    Returns:
+        result (bool): Is the word of valud length?"""
+
+    return WORD_LENGTH_MIN <= len(word) <= WORD_LENGTH_MAX

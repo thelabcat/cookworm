@@ -34,7 +34,7 @@ import webbrowser
 from . import utils
 from . import config_io
 from . import theme
-from . import gui_heavy_ops
+from . import heavy_ops
 from . import info
 
 # The path of the script file's containing folder
@@ -88,7 +88,7 @@ class Editor(tk.Tk):
         self.op_warnings = Queue()
         self.op_errors = Queue()
 
-        # Ordered pairs of the queues with the callable to use on them
+        # Pairs of the queues with the callable to use on them, ordered by urgency
         self.op_dialog_queues_n_calls = list(zip([
             self.op_errors,
             self.op_warnings,
@@ -629,6 +629,26 @@ class Editor(tk.Tk):
         self.__status_text = new
         self.status_text_queue.put(new)
 
+    def set_status_text(self, new: str):
+        """
+        Set the current operations message (thread-safe)
+
+        Args:
+            new (str): The new status text to show.
+        """
+        self.status_text = new
+
+    def op_show_message(self, title: str, message: str, level: int = 0):
+        """
+        Show information from an operation (thread-safe)
+
+        Args:
+            title (str): The dialog title.
+            message (str): What to say.
+            level (int): 0 for info, 1 for warning, 2 for error.
+        """
+        (self.op_infos, self.op_warnings, self.op_errors)[level].put((title, message))
+
     def status_tick(self):
         """Run one iteration of updating status displays"""
         # Allow for no text updates
@@ -816,7 +836,7 @@ class Editor(tk.Tk):
 
         # Load the files from the game path
         self.thread_process(
-            lambda: gui_heavy_ops.load_files(self),
+            lambda: heavy_ops.load_files(self),
             message="Loading...",
         )
 
@@ -849,7 +869,7 @@ class Editor(tk.Tk):
                 "The existing game files are older than this program. Save a backup?"
                 ))
 
-        self.thread_process(lambda: gui_heavy_ops.save_files(self, backup))
+        self.thread_process(lambda: heavy_ops.save_files(self, backup))
 
     def make_backup(self) -> bool:
         """Save a backup of the files, with a timestamp.
@@ -1074,40 +1094,23 @@ class Editor(tk.Tk):
         # Disable definition reset and save buttons.
         self.regulate_def_buttons()
 
-    def is_len_valid(self, word: str, notify: bool = False) -> bool:
-        """Check if a word's length is valid.
-
-        Args:
-            word (str): The word to check.
-            notify (bool): Wether or not to graphically notify the user
-                if the word was of invalid length.
-                Defaults to False.
-
-        Returns:
-            result (bool): Is the word of valud length?"""
-
-        valid = utils.WORD_LENGTH_MIN <= len(word) <= utils.WORD_LENGTH_MAX
-
-        if not valid and notify:
-            # Dialog auto-selects the word "short" or "long" based on wether
-            # the invalid length was a too long case or not.
-            mb.showerror(
-                "Word is too " +
-                ("short", "long")[int(len(word) > utils.WORD_LENGTH_MAX)],
-
-                f"Word must be between {utils.WORD_LENGTH_MIN:,} " +
-                f"and {utils.WORD_LENGTH_MAX:,} letters long.",
-            )
-
-        return valid
-
     def add_word(self):
         """Create a new word entry"""
 
         new = dialog.askstring("New word", "Enter the word to add:")
 
         # Allow the user to cancel, and also enforce length delimiters.
-        if not new or not self.is_len_valid(new, notify=True):
+        if not new:
+            return
+
+        if not utils.is_len_valid(new):
+            mb.showerror(
+                "Word is too " +
+                ("short", "long")[int(len(new) > utils.WORD_LENGTH_MAX)],
+
+                f"Word must be between {utils.WORD_LENGTH_MIN:,} " +
+                f"and {utils.WORD_LENGTH_MAX:,} letters long.",
+            )
             return
 
         new = new.lower()
@@ -1167,7 +1170,7 @@ class Editor(tk.Tk):
         """Add a whole file's worth of words (threaded)"""
 
         self.thread_process(
-            lambda: gui_heavy_ops.mass_add_words(
+            lambda: heavy_ops.mass_add_words(
                 self,
                 self.select_alpha_file(),
                 ),
@@ -1177,7 +1180,7 @@ class Editor(tk.Tk):
         """Delete a whole file's worth of words (threaded)"""
 
         self.thread_process(
-            lambda: gui_heavy_ops.mass_delete_words(
+            lambda: heavy_ops.mass_delete_words(
                 self,
                 self.select_alpha_file(),
                 ),
@@ -1223,22 +1226,22 @@ class Editor(tk.Tk):
     def del_invalid_len_words(self):
         """Remove all words of invalid length from the wordlist (threaded)"""
 
-        self.thread_process(lambda: gui_heavy_ops.del_invalid_len_words(self))
+        self.thread_process(lambda: heavy_ops.del_invalid_len_words(self))
 
     def del_orphaned_defs(self):
         """Find and delete any orphaned definitions (threaded)"""
 
-        self.thread_process(lambda: gui_heavy_ops.del_orphaned_defs(self))
+        self.thread_process(lambda: heavy_ops.del_orphaned_defs(self))
 
     def del_badenc_defs(self):
         """Find and delete any unencodable definitions"""
 
-        self.thread_process(lambda: gui_heavy_ops.del_badenc_defs(self))
+        self.thread_process(lambda: heavy_ops.del_badenc_defs(self))
 
     def del_dupe_words(self):
         """Delete any duplicate word listings (threaded)"""
 
-        self.thread_process(lambda: gui_heavy_ops.del_dupe_words(self))
+        self.thread_process(lambda: heavy_ops.del_dupe_words(self))
 
     def auto_define(self):
         """Attempt to automatically define the currently selected word"""
@@ -1263,7 +1266,7 @@ class Editor(tk.Tk):
             and try to define them (threaded)"""
 
         self.thread_process(
-            lambda: gui_heavy_ops.mass_auto_define(self),
+            lambda: heavy_ops.mass_auto_define(self),
             message="Working...",
             )
 
