@@ -1,5 +1,5 @@
 # !/usr/bin/env python3
-"""Cookworm GUI wrapper
+"""Cookworm PyInstaller EXE wrapper
 
 Copyright 2026 Wilbur Jaywright d.b.a. Marswide BGL.
 
