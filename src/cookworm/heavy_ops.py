@@ -19,8 +19,13 @@ limitations under the License.
 
 S.D.G."""
 
+import shutil
+import time
 from typing import Protocol, TextIO
 from . import utils
+
+
+BACKUP_FILEEXT = ".bak"  # Suffix for backup files
 
 
 class HostInterface(Protocol):
@@ -42,24 +47,6 @@ class HostInterface(Protocol):
         title (str): The dialog title.
         message (str): What to say.
         level (int): 0 for info, 1 for warning, 2 for error.
-    """
-
-    def make_backup(self) -> bool: ...
-    """
-    Save a backup of the files, with a timestamp.
-
-    Returns:
-        success (bool): Wether or not we were able to backup.
-    """
-
-    def _delete_word(self, word: str, quiet=True): ...
-    """
-    Delete a word from our wordlist and popdefs
-
-    Args:
-        word (str): The word to delete.
-        quiet (bool): If the word doesn't exist, this silences an error.
-            Defaults to True, silence the error.
     """
 
     words: list[str]
@@ -144,6 +131,67 @@ def __parse_alpha_file(host: HostInterface, f: TextIO):
 
     return alpha_words
 
+
+def _delete_word(host: HostInterface, word: str, quiet=True):
+    """Delete a word from our wordlist and popdefs
+
+    Args:
+        host: The main interface object.
+        word (str): The word to delete.
+        quiet (bool): If the word doesn't exist, this silences an error.
+            Defaults to True, silence the error."""
+
+    # Delete the word
+    if utils.binary_search(host.words, word) is not None:
+        host.words.remove(word)
+    elif not quiet:
+        host.op_show_message(
+            "Bad delete attempt",
+            f"Attempted to delete '{word}' but it was not in the wordlist.",
+            2,
+            )
+
+    # Delete any popdef
+    if host.defs.get(word) is not None:
+        del host.defs[word]
+
+
+def make_backup(host) -> bool:
+    """Save a backup of the files, with a timestamp.
+
+    Args:
+        host: The main interface object.
+
+    Returns:
+        success (bool): Wether or not we were able to backup."""
+
+    # Catch for the files having been deleted while editing them
+    if not utils.is_game_path_valid(host.game_path):
+        host.op_show_message(
+            "Backup failed",
+            "Could not back up the original files " +
+            "because they have disappeared.",
+            2,
+            )
+        return False
+
+    backup_suffix = f"_{int(time.time())}{BACKUP_FILEEXT}"
+    shutil.copy(
+        host.wordlist_abs_path,
+        host.wordlist_abs_path + backup_suffix,
+    )
+    shutil.copy(
+        host.popdefs_abs_path,
+        host.popdefs_abs_path + backup_suffix,
+    )
+
+    # Notify the user that the backup was successful
+    host.op_show_message(
+        "Backup completed",
+        f"Copied files to current game path with suffix '{backup_suffix}'",
+        0,
+        )
+    return True
 
 def load_files(host: HostInterface):
     """Load the wordlist and the popdefs, given the game_path attribute
@@ -350,7 +398,7 @@ def mass_delete_words(host: HostInterface, f: TextIO):
     # Perform the deletion
     host.set_status_text("Deleting...")
     for word in old_words:
-        host._delete_word(word)
+        _delete_word(host, word)
 
     # There are now major unsaved changes
     host.op_show_message(
@@ -382,7 +430,7 @@ def del_invalid_len_words(host: HostInterface):
 
     # Perform the deletion
     for word in invalid:
-        host._delete_word(word)
+        _delete_word(host, word)
 
     # There are now mass unsaved changes
     host.op_show_message(
