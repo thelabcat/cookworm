@@ -193,6 +193,7 @@ def make_backup(host) -> bool:
         )
     return True
 
+
 def load_files(host: HostInterface):
     """Load the wordlist and the popdefs, given the game_path attribute
 
@@ -235,7 +236,7 @@ def save_files(host: HostInterface, backup: bool = False):
 
     if backup:
         host.set_status_text("Creating backup...")
-        host.make_backup()
+        make_backup(host)
 
     # First, encode the wordlist
     host.set_status_text(f"Encoding {utils.WORDLIST_FILE}...")
