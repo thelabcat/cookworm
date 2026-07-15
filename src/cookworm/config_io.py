@@ -37,6 +37,10 @@ CONFIG_DEFAULTS = {
     "gamePath": str(utils.GAME_PATH_OS_DEFAULT)
     }
 
+# The user specified a game path for this launch
+# Set this variable externally
+game_path_specified: str = None
+
 
 def choose_best_game_path(suggestion: Path | str) -> Path:
     """Decide which is better: The suggested path, or the default
@@ -82,14 +86,15 @@ def choose_best_game_path(suggestion: Path | str) -> Path:
 def load_config():
     """Load the config for the editor, or return blank new config"""
     if not CONFIG_FILE.exists():
-        return CONFIG_DEFAULTS
-
-    with open(CONFIG_FILE, encoding=CONFIG_ENC) as f:
-        config = yaml.safe_load(f.read())
+        config = CONFIG_DEFAULTS
+    else:
+        with open(CONFIG_FILE, encoding=CONFIG_ENC) as f:
+            config = yaml.safe_load(f.read())
 
     # Avoid loading the game path as a Path object
     # Also, choose the best between it and the default
-    config["gamePath"] = str(choose_best_game_path(config["gamePath"]))
+    # If the user specified a game path via CLI, that always wins
+    config["gamePath"] = game_path_specified if game_path_specified else str(choose_best_game_path(config["gamePath"]))
 
     return config
 
