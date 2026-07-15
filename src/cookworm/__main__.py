@@ -43,7 +43,7 @@ class EditorCLI:
 
         self.parser = argparse.ArgumentParser(
             prog="cookworm",
-            description="The BookWorm Deluxe wordlist and popdefs editor",
+            description=f"The BookWorm Deluxe wordlist and popdefs editor. Version {info.PROGRAM_VER}, licensed under {info.LICENSE_NAME}. Project homepage: {info.URL.homepage}",
             epilog="S.D.G.",
             )
 
