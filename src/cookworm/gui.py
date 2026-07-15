@@ -21,7 +21,6 @@ S.D.G."""
 
 from os import path as op
 from queue import Queue
-import shutil
 import sys
 import threading
 import tkinter as tk
@@ -29,7 +28,6 @@ from tkinter import filedialog
 from tkinter import messagebox as mb
 from tkinter import simpledialog as dialog
 from tkinter import ttk
-import time
 import webbrowser
 from . import utils
 from . import config_io
@@ -39,8 +37,6 @@ from . import info
 
 # The path of the script file's containing folder
 OP_PATH = op.dirname(__file__)
-
-BACKUP_FILEEXT = ".bak"  # Suffix for backup files
 
 # Miscellanious GUI settings
 WINDOW_TITLE = info.PROGRAM_NAME
@@ -272,11 +268,11 @@ class Editor(tk.Tk):
         self.file_menu.add_separator()
 
         # Backup existing
-        self.bind("<Control-b>", self.make_backup)
+        self.bind("<Control-b>", heavy_ops.make_backup)
         self.file_menu.add_command(
             label="🕞 Backup existing",
             underline=3,
-            command=self.make_backup
+            command=heavy_ops.make_backup
             )
 
         self.menubar.add_cascade(
@@ -951,38 +947,6 @@ class Editor(tk.Tk):
 
         self.thread_process(lambda: heavy_ops.save_files(self, backup))
 
-    def make_backup(self) -> bool:
-        """Save a backup of the files, with a timestamp.
-
-        Returns:
-            success (bool): Wether or not we were able to backup."""
-
-        # Catch for the files having been deleted while editing them
-        if not utils.is_game_path_valid(self.game_path):
-            mb.showerror(
-                "Backup failed",
-                "Could not back up the original files " +
-                "because they have disappeared.",
-            )
-            return False
-
-        backup_suffix = f"_{int(time.time())}{BACKUP_FILEEXT}"
-        shutil.copy(
-            self.wordlist_abs_path,
-            self.wordlist_abs_path + backup_suffix,
-        )
-        shutil.copy(
-            self.popdefs_abs_path,
-            self.popdefs_abs_path + backup_suffix,
-        )
-
-        # Notify the user that the backup was successful
-        mb.showinfo(
-            "Backup completed",
-            f"Copied files to current game path with suffix '{backup_suffix}'",
-            )
-        return True
-
     def select_alpha_file(self):
         """
         Let the user select a text file
@@ -1274,34 +1238,13 @@ class Editor(tk.Tk):
             return
 
         # Actually do the deleting
-        self._delete_word(self.selected_word)
+        heavy_ops._delete_word(self, self.selected_word)
 
         # Refresh the query list
         self.update_query()
 
         # There are now unsaved changes
         self.unsaved_changes = True
-
-    def _delete_word(self, word: str, quiet=True):
-        """Delete a word from our wordlist and popdefs
-
-        Args:
-            word (str): The word to delete.
-            quiet (bool): If the word doesn't exist, this silences an error.
-                Defaults to True, silence the error."""
-
-        # Delete the word
-        if utils.binary_search(self.words, word) is not None:
-            self.words.remove(word)
-        elif not quiet:
-            mb.showerror(
-                "Bad delete attempt",
-                f"Attempted to delete '{word}' but it was not in the wordlist."
-                )
-
-        # Delete any popdef
-        if self.defs.get(word) is not None:
-            del self.defs[word]
 
     def del_invalid_len_words(self):
         """Remove all words of invalid length from the wordlist (threaded)"""
