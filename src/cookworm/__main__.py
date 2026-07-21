@@ -42,9 +42,8 @@ class EditorCLI:
         """Wether or not changes have been made to the files that need saving"""
 
         self.parser = argparse.ArgumentParser(
-            prog="cookworm",
             description=f"The BookWorm Deluxe wordlist and popdefs editor. Version {info.PROGRAM_VER}, licensed under {info.LICENSE_NAME}. Project homepage: {info.URL.homepage}",
-            epilog="S.D.G.",
+            epilog="NOTE: CLI options are run in documented order, not provided order. S.D.G.",
             )
 
         self.status_code: int = self.parse_args()
@@ -239,11 +238,11 @@ class EditorCLI:
 
         # Delete any directly provided words
         for word in args.delete:
-            print("Got file of words to delete:", filename)
             operations.delete_word(self, word, quiet=False)
 
         # Accept one or more files of words to delete
         for filename in args.delete_file:
+            print("Got file of words to delete:", filename)
             with open(filename, encoding=utils.FILE_ENC) as f:
                 operations.mass_delete_words(self, f)
 
