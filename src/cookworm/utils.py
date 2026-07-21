@@ -56,7 +56,8 @@ WHITESPACE_PATTERN = re.compile(r"\s+")
 # Make sure we have the NLTK wordnet for our English dictionary
 # Note: Without internet, nltk.download will quietly fail and return False.
 # With internet, it will return True even if we already had wordnet.
-nltk.download("wordnet")
+# Only print info if we fail to connect
+nltk.download("wordnet", quiet=True)
 try:
     WORD_POS = {
         wordnet.NOUN: "n.",
