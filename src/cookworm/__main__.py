@@ -23,7 +23,7 @@ from os import path as op
 from sys import stderr, stdin
 from warnings import warn
 from .gui import main as gui_main
-from . import config_io, heavy_ops, utils, info
+from . import config_io, operations, utils, info
 
 
 class EditorCLI:
@@ -80,8 +80,10 @@ class EditorCLI:
             )
         self.parser.add_argument(
             "-A", "--add-file",
+            nargs="+",
             type=str,
-            help="(CLI) Add the given file of words to the list, '-' for stdin",
+            default=[],
+            help="(CLI) Add the given file(s) of words to the list, '-' for stdin",
             )
         self.parser.add_argument(
             "-x", "--delete",
@@ -92,8 +94,10 @@ class EditorCLI:
             )
         self.parser.add_argument(
             "-X", "--delete-file",
+            nargs="+",
             type=str,
-            help="(CLI) Remove the given file of words from the list, '-' for stdin",
+            default=[],
+            help="(CLI) Remove the given file(s) of words from the list, '-' for stdin",
             )
         self.parser.add_argument(
             "-d", "--define",
@@ -119,7 +123,7 @@ class EditorCLI:
             action="store_true",
             help="(CLI) Find and delete all orphaned definitions",
             )
-            #-s silence benign errors: allow "it already is that way" without raising an error.
+        # -s silence benign errors: allow "it already is that way" without raising an error.
         self.parser.add_argument(
             "-l", "--length-limit",
             action="store_true",
@@ -221,40 +225,37 @@ class EditorCLI:
 
         # Load the game files
         assert utils.is_game_path_valid(self.game_path), f"Could not find game files at '{self.game_path}', try specifying the game path manually"
-        heavy_ops.load_files(self)
+        operations.load_files(self)
 
+        # Add any directly provided words
         for word in args.add:
-            assert utils.is_len_valid(word), f"Cannot add word '{word}' becuase it is of invalid length"
-            word = word.lower()
-            assert word.isalpha(), f"Cannot add '{word}' because it is not all alpha"
-            if not utils.binary_search(self.words, word):
-                # Add the new word
-                self.words.append(word)
-                self.words.sort()
-                self.unsaved_changes = True
-            else:
-                self.op_show_message(
-                    "Duplicate add",
-                    f"Cannot add word {word} because it already exists",
-                    1,
-                    )
+            operations.add_word(self, word)
 
-        if args.add_file:
-            with open(args.add_file, encoding=utils.FILE_ENC) as f:
-                heavy_ops.mass_add_words(self, f)
+        # Accept one or more files of words to add
+        for filename in args.add_file:
+            print("Got file of words to add:", filename)
+            with open(filename, encoding=utils.FILE_ENC) as f:
+                operations.mass_add_words(self, f)
 
+        # Delete any directly provided words
         for word in args.delete:
-            heavy_ops._delete_word(self, word, quiet=False)
+            print("Got file of words to delete:", filename)
+            operations.delete_word(self, word, quiet=False)
 
-        if args.delete_file:
-            with open(args.delete_file, encoding=utils.FILE_ENC) as f:
-                heavy_ops.mass_delete_words(self, f)
+        # Accept one or more files of words to delete
+        for filename in args.delete_file:
+            with open(filename, encoding=utils.FILE_ENC) as f:
+                operations.mass_delete_words(self, f)
 
+        # Make sure the user doesn't have this flag with nothing
+        # None means they didn't have the flag
         assert args.define or args.define is None, "Must pass word to define"
+
+        # Either print the definition of a word, or set it to the one provided
         if args.define:
             assert len(args.define) in (1, 2), "Can only define one word at a time"
             word = args.define[0]
-            assert utils.binary_search(self.words, word), f"Cannot define word '{word}' before it is added"
+            assert utils.binary_search(self.words, word) is not None, f"Cannot define word '{word}' before it is added"
 
             # Print existing definition
             if len(args.define) == 1:
@@ -269,6 +270,7 @@ class EditorCLI:
 
             self.defs = dict(sorted(self.defs.items()))
 
+        # Auto-define specified words, or all rare words
         if args.auto_define is not None:
             assert utils.HAVE_WORDNET, "We need to download the NLTK wordnet English dictionary " + \
                 "for auto-defining. Please connect to the internet, then " + \
@@ -278,7 +280,7 @@ class EditorCLI:
             if args.auto_define:
                 # Ensure all words exist before attempting to auto-define
                 for word in args.auto_define:
-                    assert utils.binary_search(self.words, word), f"Cannot define word '{word}' before it is added"
+                    assert utils.binary_search(self.words, word) is not None, f"Cannot define word '{word}' before it is added"
                 for word in args.auto_define:
                     result, success = utils.build_auto_def(word)
                     if success:
@@ -291,28 +293,32 @@ class EditorCLI:
                             2,
                             )
                 self.defs = dict(sorted(self.defs.items()))
-                self.unsaved_changes=True
+                self.unsaved_changes = True
 
             # All words auto-define
             else:
-                heavy_ops.mass_auto_define(self)
+                operations.mass_auto_define(self)
 
+        # Delete a definition of one word if requested
+        # TODO: Should this accept multiple words?
         if args.remove_def:
             assert args.remove_def in self.defs, f"No definition saved for `{args.remove_def}`, so cannot remove it."
             del self.defs[args.remove_def]
             self.unsaved_changes = True
 
+        # Miscellaneous repair utilities
         if args.orphan_fix:
-            heavy_ops.del_orphaned_defs(self)
+            operations.del_orphaned_defs(self)
 
         if args.length_limit:
-            heavy_ops.del_invalid_len_words(self)
+            operations.del_invalid_len_words(self)
 
         if args.encoding_check:
-            heavy_ops.del_badenc_defs(self)
+            operations.del_badenc_defs(self)
 
+        # Save changes on exit
         if self.unsaved_changes:
-            heavy_ops.save_files(self, backup=args.backup or min((
+            operations.save_files(self, backup=args.backup or min((
                 op.getmtime(self.wordlist_abs_path),
                 op.getmtime(self.popdefs_abs_path),
             )) < info.INITIAL_COMMIT_TIMESTAMP)

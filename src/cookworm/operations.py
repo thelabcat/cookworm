@@ -1,7 +1,8 @@
 #!/ur/bin/env python3
-"""Cookworm heavy operations
+"""Cookworm operations
 
-Functions that take a long time to complete, and should be threaded if running via GUI
+Complex functions for modifying the list once it is loaded, some should be
+threaded for the GUI.
 
 Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
 
@@ -132,11 +133,61 @@ def __parse_alpha_file(host: HostInterface, f: TextIO):
     return alpha_words
 
 
-def _delete_word(host: HostInterface, word: str, quiet=True):
+def add_word(host: HostInterface, word: str):
+    """
+    Add a word to our wordlist
+
+    Args:
+        host (HostInterface): The main interface object.
+        word (str): The word to add
+    """
+
+    word = word.lower()
+
+    # Ensure valid word length
+    if not utils.is_len_valid(word):
+        host.op_show_message(
+            "Word is too " +
+            ("short", "long")[int(len(word) > utils.WORD_LENGTH_MAX)],
+
+            f"Word must be between {utils.WORD_LENGTH_MIN:,} " +
+            f"and {utils.WORD_LENGTH_MAX:,} letters long.",
+            2,
+        )
+        return
+
+    # Ensure that the word is only letters
+    if not word.isalpha():
+        host.op_show_message(
+            "Invalid characters found",
+            "Word must be only letters (no numbers or symbols).",
+            2,
+        )
+        return
+
+    # If the word really is new, add it.
+    if utils.binary_search(host.words, word) is None:
+        # Add the new word
+        host.words.append(word)
+        host.words.sort()
+
+        # There are now unsaved changes
+        host.unsaved_changes = True
+
+    # If it is not new, notify the user.
+    else:
+        host.op_show_message(
+            "Already have word",
+            f"The word '{word}' is already in the word list.",
+            0,
+        )
+
+
+def delete_word(host: HostInterface, word: str, quiet=True):
     """Delete a word from our wordlist and popdefs
 
     Args:
-        host: The main interface object.
+        host (HostInterface): The main interface object.
         word (str): The word to delete.
         quiet (bool): If the word doesn't exist, this silences an error.
             Defaults to True, silence the error."""
@@ -399,7 +450,7 @@ def mass_delete_words(host: HostInterface, f: TextIO):
     # Perform the deletion
     host.set_status_text("Deleting...")
     for word in old_words:
-        _delete_word(host, word)
+        delete_word(host, word)
 
     # There are now major unsaved changes
     host.op_show_message(
@@ -431,7 +482,7 @@ def del_invalid_len_words(host: HostInterface):
 
     # Perform the deletion
     for word in invalid:
-        _delete_word(host, word)
+        delete_word(host, word)
 
     # There are now mass unsaved changes
     host.op_show_message(

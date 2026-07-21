@@ -32,7 +32,7 @@ import webbrowser
 from . import utils
 from . import config_io
 from . import theme
-from . import heavy_ops
+from . import operations
 from . import info
 
 # The path of the script file's containing folder
@@ -268,11 +268,11 @@ class Editor(tk.Tk):
         self.file_menu.add_separator()
 
         # Backup existing
-        self.bind("<Control-b>", heavy_ops.make_backup)
+        self.bind("<Control-b>", operations.make_backup)
         self.file_menu.add_command(
             label="🕞 Backup existing",
             underline=3,
-            command=heavy_ops.make_backup
+            command=operations.make_backup
             )
 
         self.menubar.add_cascade(
@@ -912,7 +912,7 @@ class Editor(tk.Tk):
 
         # Load the files from the game path
         self.thread_process(
-            lambda: heavy_ops.load_files(self),
+            lambda: operations.load_files(self),
             message="Loading...",
         )
 
@@ -945,7 +945,7 @@ class Editor(tk.Tk):
                 "The existing game files are older than this program. Save a backup?"
                 ))
 
-        self.thread_process(lambda: heavy_ops.save_files(self, backup))
+        self.thread_process(lambda: operations.save_files(self, backup))
 
     def select_alpha_file(self):
         """
@@ -961,7 +961,7 @@ class Editor(tk.Tk):
 
     def selection_updated(self):
         """A new word has been selected (or the equivalent of such), update
-            everything."""
+            the word editor elements."""
 
         # Load and display the current definition
         self.load_definition()
@@ -1147,50 +1147,16 @@ class Editor(tk.Tk):
         if not new:
             return
 
-        if not utils.is_len_valid(new):
-            mb.showerror(
-                "Word is too " +
-                ("short", "long")[int(len(new) > utils.WORD_LENGTH_MAX)],
-
-                f"Word must be between {utils.WORD_LENGTH_MIN:,} " +
-                f"and {utils.WORD_LENGTH_MAX:,} letters long.",
-            )
-            return
-
-        new = new.lower()
-
-        # Ensure that the word is only letters
-        if not new.isalpha():
-            mb.showerror(
-                "Invalid characters found",
-                "Word must be only letters (no numbers or symbols).",
-            )
-            return
-
-        # If the word really is new, add it.
-        if not utils.binary_search(self.words, new):
-            # Add the new word
-            self.words.append(new)
-            self.words.sort()
-
-            # Update the query
-            self.update_query()
-
-            # There are now unsaved changes
-            self.unsaved_changes = True
-
-        # If it is not new, notify the user.
-        else:
-            mb.showinfo(
-                "Already have word",
-                f"The word '{new}' is already in the word list.",
-            )
+        operations.add_word(self, new)
 
         # Highlight and scroll to the new word even if it wasn't actually new
-        # If the word isn't in our search query, clear it so we can still
-        # select the word.
+        # If the word won't be in our search query, clear the search so we can
+        # still select the word.
         if self.search_str.get() not in new:
             self.search_str.set("")
+        # The wird will be in our search query, so just update it
+        else:
+            self.update_query()
         self.selected_word = new
 
     def mass_unsaved_changes(self, title: str, changes: str):
@@ -1214,7 +1180,7 @@ class Editor(tk.Tk):
         """Add a whole file's worth of words (threaded)"""
 
         self.thread_process(
-            lambda: heavy_ops.mass_add_words(
+            lambda: operations.mass_add_words(
                 self,
                 self.select_alpha_file(),
                 ),
@@ -1224,7 +1190,7 @@ class Editor(tk.Tk):
         """Delete a whole file's worth of words (threaded)"""
 
         self.thread_process(
-            lambda: heavy_ops.mass_delete_words(
+            lambda: operations.mass_delete_words(
                 self,
                 self.select_alpha_file(),
                 ),
@@ -1238,7 +1204,7 @@ class Editor(tk.Tk):
             return
 
         # Actually do the deleting
-        heavy_ops._delete_word(self, self.selected_word)
+        operations.delete_word(self, self.selected_word)
 
         # Refresh the query list
         self.update_query()
@@ -1249,22 +1215,22 @@ class Editor(tk.Tk):
     def del_invalid_len_words(self):
         """Remove all words of invalid length from the wordlist (threaded)"""
 
-        self.thread_process(lambda: heavy_ops.del_invalid_len_words(self))
+        self.thread_process(lambda: operations.del_invalid_len_words(self))
 
     def del_orphaned_defs(self):
         """Find and delete any orphaned definitions (threaded)"""
 
-        self.thread_process(lambda: heavy_ops.del_orphaned_defs(self))
+        self.thread_process(lambda: operations.del_orphaned_defs(self))
 
     def del_badenc_defs(self):
         """Find and delete any unencodable definitions"""
 
-        self.thread_process(lambda: heavy_ops.del_badenc_defs(self))
+        self.thread_process(lambda: operations.del_badenc_defs(self))
 
     def del_dupe_words(self):
         """Delete any duplicate word listings (threaded)"""
 
-        self.thread_process(lambda: heavy_ops.del_dupe_words(self))
+        self.thread_process(lambda: operations.del_dupe_words(self))
 
     def auto_define(self):
         """Attempt to automatically define the currently selected word"""
@@ -1289,7 +1255,7 @@ class Editor(tk.Tk):
             and try to define them (threaded)"""
 
         self.thread_process(
-            lambda: heavy_ops.mass_auto_define(self),
+            lambda: operations.mass_auto_define(self),
             message="Working...",
             )
 
