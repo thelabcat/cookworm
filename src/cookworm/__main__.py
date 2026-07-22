@@ -19,6 +19,7 @@ S.D.G.
 """
 
 import argparse
+from glob import glob
 from os import path as op
 from sys import stderr, stdin
 from warnings import warn
@@ -199,6 +200,11 @@ class EditorCLI:
             if not infile_name:
                 intext = stdin.read().strip()
             else:
+                # The path does not work directly, but maybe it is a pattern
+                if not op.exists(infile_name):
+                    infile_glob = glob(infile_name)
+                    assert len(infile_glob) == 1, "Input file pattern must match exactly one file"
+                    infile_name = infile_glob[0]
                 with open(infile_name, encoding=utils.FILE_ENC) as f:
                     intext = f.read().strip()
 
@@ -231,20 +237,30 @@ class EditorCLI:
             operations.add_word(self, word)
 
         # Accept one or more files of words to add
-        for filename in args.add_file:
-            print("Got file of words to add:", filename)
-            with open(filename, encoding=utils.FILE_ENC) as f:
-                operations.mass_add_words(self, f)
+        for filepattern in args.add_file:
+            # Parse glob patterns
+            found = glob(filepattern)
+            if not found:
+                self.op_show_message("Invalid file pattern", f"No files found that match '{filepattern}'", 2)
+            for filename in found:
+                print("Got file of words to add:", filename)
+                with open(filename, encoding=utils.FILE_ENC) as f:
+                    operations.mass_add_words(self, f)
 
         # Delete any directly provided words
         for word in args.delete:
             operations.delete_word(self, word, quiet=False)
 
         # Accept one or more files of words to delete
-        for filename in args.delete_file:
-            print("Got file of words to delete:", filename)
-            with open(filename, encoding=utils.FILE_ENC) as f:
-                operations.mass_delete_words(self, f)
+        for filepattern in args.delete_file:
+            # Parse glob patterns
+            found = glob(filepattern)
+            if not found:
+                self.op_show_message("Invalid file pattern", f"No files found that match '{filepattern}'", 2)
+            for filename in found:
+                print("Got file of words to delete:", filename)
+                with open(filename, encoding=utils.FILE_ENC) as f:
+                    operations.mass_delete_words(self, f)
 
         # Make sure the user doesn't have this flag with nothing
         # None means they didn't have the flag
