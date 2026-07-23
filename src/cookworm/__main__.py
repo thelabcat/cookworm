@@ -76,94 +76,94 @@ class EditorCLI:
             nargs="*",
             type=str,
             default=[],
-            help="(CLI) Add the given words to the list",
+            help="Add the given words to the list",
             )
         self.parser.add_argument(
             "-A", "--add-file",
             nargs="+",
             type=str,
             default=[],
-            help="(CLI) Add the given file(s) of words to the list, '-' for stdin",
+            help="Add the given file(s) of words to the list, '-' for stdin",
             )
         self.parser.add_argument(
             "-x", "--delete",
             nargs="*",
             type=str,
             default=[],
-            help="(CLI) Remove the given words from the list",
+            help="Remove the given words from the list",
             )
         self.parser.add_argument(
             "-X", "--delete-file",
             nargs="+",
             type=str,
             default=[],
-            help="(CLI) Remove the given file(s) of words from the list, '-' for stdin",
+            help="Remove the given file(s) of words from the list, '-' for stdin",
             )
         self.parser.add_argument(
             "-d", "--define",
             nargs="*",
             type=str,
             default=None,
-            help="(CLI) Define a word. Pass no arguments to print the existing definition",
+            help="Define a word. Pass no arguments to print the existing definition",
             )
         self.parser.add_argument(
             "-D", "--auto-define",
             nargs="*",
             type=str,
             default=None,
-            help="(CLI) Automatically define specified words. Pass no arguments to define all rare ones",
+            help="Automatically define specified words. Pass no arguments to define all rare ones",
             )
         self.parser.add_argument(
             "-k", "--remove-def",
             type=str,
-            help="(CLI) Remove the popup definition for the given word, because it is widely known",
+            help="Remove the popup definition for the given word, because it is widely known",
             )
         self.parser.add_argument(
             "-o", "--orphan-fix",
             action="store_true",
-            help="(CLI) Find and delete all orphaned definitions",
+            help="Find and delete all orphaned definitions",
             )
         # -s silence benign errors: allow "it already is that way" without raising an error.
         self.parser.add_argument(
             "-l", "--length-limit",
             action="store_true",
-            help="(CLI) Find and delete all words of invalid length",
+            help="Find and delete all words of invalid length",
             )
         self.parser.add_argument(
             "-e", "--encoding-check",
             action="store_true",
-            help="(CLI) Find and delete all unencodable definitions",
+            help="Find and delete all unencodable definitions",
             )
         self.parser.add_argument(
             "-P", "--game-path",
             type=str,
-            help="Manually specify game program folder location",
+            help="(CLI and GUI) Manually specify game program folder location",
             )
         self.parser.add_argument(
             "-b", "--backup",
             action="store_true",
-            help="(CLI) Create backup of game files, defaults to yes if they are older than the program",
+            help="Create backup of game files, defaults to yes if they are older than the program",
             )
         self.parser.add_argument(
             "-p", "--parser",
             nargs="?",
             type=str,
             default=None,
-            help="(CLI) Work directly from a wordlist file, and parse it to an output. No argument to read stdin",
+            help="Work directly from a wordlist file, and parse it to an output. No argument to read stdin",
             )
         self.parser.add_argument(
             "-u", "--unparser",
             nargs="?",
             type=str,
             default=None,
-            help="(CLI) Work directly from a plain words file, and unparse it to a wordlist output. No argument to read stdin",
+            help="Work directly from a plain words file, and unparse it to a wordlist output. No argument to read stdin",
             )
         self.parser.add_argument(
             "outfile",
             nargs="?",
             type=str,
             default=None,
-            help="(CLI) Output file for raw (un)parser mode. Defaults to stdout",
+            help="Output file for raw (un)parser mode. Defaults to stdout",
             )
 
         args = self.parser.parse_args()
