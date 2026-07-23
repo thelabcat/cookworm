@@ -43,7 +43,7 @@ else
     source ./.venv/bin/activate
 fi
 
-output_name="cookworm-gui-$os_suffix-$(uname -m)"
+output_name="cookworm-$os_suffix-$(uname -m)"
 echo "Executable output name determined to be $output_name"
 
 echo "Installing requirements"
