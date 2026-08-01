@@ -3,15 +3,10 @@
 
 This program edits the wordlist and popup definitions for the game [BookWorm Deluxe by PopCap Games](https://oldgamesdownload.com/bookworm-deluxe/) released in 2006. I created this program after augmenting the wordlist more manually using [this free list of English words by dwyl](https://github.com/dwyl/english-words), but then discovering that it contained some errors, along with real words that I felt deserved a popdef. 
 
-## Installation
-### Windows portable exe app only
-[Download EXE](https://github.com/thelabcat/cookworm/releases/latest/download/cookworm-win-x86_64.exe)
+## Normal installation
+This app requires that [Python](https://python.org) and Pip are installed. It is officially written in Python 3.14, and is known to not work with anything older than 3.10. Once you have that, open a command line (Windows Terminal or PowerShell counts), and run `pip install cookworm`. If it fails with an error about the "environment is externally managed", you will have to create a Python virtual environment and activate it, then try again. The script command to run, and the Python library name to import, are both `cookworm`. I'm not sure how to make a Windows shortcut for a command though...
 
-
-### Any OS, app and Python library
-Requires that Python and Pip are installed. This program is officially written in Python 3.14, and is known to not work with anything older than 3.10. Open a command line (Windows Terminal or PowerShell counts), and run `pip install cookworm`. If it fails with an error about the "environment is externally managed", you will have to create a Python virtual environment and activate it, then try again. The script command to run, and the Python library name to import, are both `cookworm`. I'm not sure how to make a Windows shortcut for a command though...
-
-### Any OS, running from source (for nerds)
+## Running from source (for nerds)
 This program relies on the following non-native Python libraries, which can be installed using Pip:
 - [NLTK](https://pypi.org/project/nltk/)
 - [wordfreq](https://pypi.org/project/wordfreq/)
