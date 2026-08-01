@@ -104,7 +104,7 @@ class EditorCLI:
             nargs="*",
             type=str,
             default=None,
-            help="Define a word. Pass no arguments to print the existing definition",
+            help="Define a word. Pass just the word to get its definition, pass the word then the definition to set it.",
             )
         self.parser.add_argument(
             "-D", "--auto-define",
