@@ -667,7 +667,7 @@ class Editor(tk.Tk):
         """The status text to display when no operations are running"""
         return f"Ready. {len(self.words):,} words. " +\
             f"{len(self.defs):,} popdefs." +\
-            f"{" (unsaved)" if self.unsaved_changes else ""}"
+            f"{' (unsaved)' if self.unsaved_changes else ''}"
 
     @property
     def busy(self) -> bool:
