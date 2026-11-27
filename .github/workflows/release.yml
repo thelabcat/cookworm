@@ -4,8 +4,14 @@
 #   1. Merge devel into master and push master.
 #   2. Publish a GitHub release whose tag is "v" + the version in
 #      pyproject.toml, e.g. version 3.1.1 -> tag v3.1.1-beta (or v3.1.1).
-#   3. This workflow does the rest: builds the packages, attaches them to the
-#      release and uploads to PyPI.
+#   3. This workflow does the rest: builds the packages and the Windows EXE,
+#      attaches them to the release and uploads to PyPI.
+#
+# The EXE is attached under two names: cookworm-win-x86_64.exe never changes,
+# so https://github.com/thelabcat/cookworm/releases/latest/download/cookworm-win-x86_64.exe
+# is always the newest EXE (that is the link for the website download button),
+# and cookworm-<version>-win-x86_64.exe is the same file for the record.
+# "latest" skips pre-releases and drafts.
 #
 # Failsafes:
 #   - Nothing public happens until every check in the "check" job passes.
@@ -16,7 +22,8 @@
 #     so you can fix the problem and publish the draft again.
 #
 # Dry run: pull requests, and "Run workflow" on the Actions tab, only run the
-# "check" job. They never publish anything.
+# "check" and "exe" jobs (so the EXE build and its tests are tried out before a
+# release). They never publish anything.
 
 name: Release
 
@@ -43,6 +50,9 @@ env:
   PACKAGE: cookworm  # The project name on PyPI
   DIST_NAME: cookworm  # How the built package files are named
   PYTHON_VERSION: "3.11"  # The oldest Python that pyproject.toml supports
+  EXE_PYTHON_VERSION: "3.13"  # Python used to build the EXE
+  EXE_NAME: cookworm  # How the EXE files are named
+  EXE_STABLE: cookworm-win-x86_64.exe  # The EXE name that never changes (space separated list)
 
 jobs:
   check:
@@ -141,9 +151,60 @@ jobs:
           if-no-files-found: error
 
 
-  attach:
-    name: Attach packages to the release
+  exe:
+    name: Build and test the Windows EXE
     needs: check
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      NLTK_DATA: ${{ github.workspace }}/nltk_data_build  # Where the dictionary to bundle is downloaded
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.EXE_PYTHON_VERSION }}
+
+      - name: Install the app and PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install . pyinstaller
+
+      # The EXE carries the dictionary with it, so it never has to download it.
+      # PyInstaller's NLTK hook copies the NLTK_DATA folder into the EXE.
+      - name: Download the NLTK wordnet dictionary to bundle
+        run: python -m nltk.downloader --no-extract -d "$NLTK_DATA" wordnet
+
+      - name: Build the EXE
+        run: python .github/scripts/build_exe.py "${EXE_STABLE%.exe}"
+
+      # Throw the build-time dictionary away, so the test can only pass if the
+      # EXE really carries its own copy.
+      - name: Test the EXE
+        run: |
+          rm -rf "$NLTK_DATA"
+          python .github/scripts/smoke_test_exe.py "dist-exe/${EXE_STABLE}"
+
+      - name: Name the EXE files
+        run: |
+          mkdir exe-out
+          cp "dist-exe/${EXE_STABLE}" "exe-out/${EXE_STABLE}"
+          cp "dist-exe/${EXE_STABLE}" "exe-out/${EXE_NAME}-${VERSION}-win-x86_64.exe"
+          ls -l exe-out
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: exe
+          path: exe-out/
+          if-no-files-found: error
+
+
+  attach:
+    name: Attach packages and the EXE to the release
+    needs: [check, exe]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
@@ -154,12 +215,17 @@ jobs:
           name: dist
           path: dist
 
-      - name: Upload packages to the release
+      - uses: actions/download-artifact@v8
+        with:
+          name: exe
+          path: exe-out
+
+      - name: Upload packages and the EXE to the release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" dist/* --clobber
+        run: gh release upload "$TAG" dist/* exe-out/* --clobber
 
   pypi:
     name: Upload to PyPI
@@ -181,7 +247,7 @@ jobs:
 
   rollback:
     name: Roll back after a failure
-    needs: [check, attach, pypi]
+    needs: [check, exe, attach, pypi]
     if: github.event_name == 'release' && (failure() || cancelled())
     runs-on: ubuntu-latest
     permissions:
@@ -222,10 +288,11 @@ jobs:
           echo "PyPI does not have $PACKAGE $VERSION (HTTP $STATUS). Rolling back."
           echo "on_pypi=false" >> "$GITHUB_OUTPUT"
 
-      - name: Remove packages from the release
+      - name: Remove packages and the EXE from the release
         if: always() && steps.pypi.outputs.on_pypi == 'false'
         run: |
-          gh api "repos/$REPO/releases/$RELEASE_ID/assets" --jq '.[] | select(.name | startswith(env.DIST_NAME + "-" + env.VERSION)) | "\(.id) \(.name)"' |
+          # shellcheck disable=SC2016  # $stable is a jq variable, not a shell one
+          gh api "repos/$REPO/releases/$RELEASE_ID/assets" --jq '(env.EXE_STABLE | split(" ")) as $stable | .[] | select(.name as $n | ($n | startswith(env.DIST_NAME + "-" + env.VERSION)) or ($n | startswith(env.EXE_NAME + "-" + env.VERSION)) or ($stable | index($n) != null)) | "\(.id) \(.name)"' |
           while read -r ID NAME; do
             gh api -X DELETE "repos/$REPO/releases/assets/$ID"
             echo "Removed $NAME from the release."
