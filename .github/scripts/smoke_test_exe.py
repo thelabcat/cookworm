@@ -66,6 +66,7 @@ def cli_test(exe: str, home: str) -> None:
     assert popdefs.startswith("AARDVARK\t("), "aardvark was not auto-defined: wordnet is missing or broken"
     assert "termites" in popdefs, "aardvark's definition is not the wordnet one"
     assert "HOUSE" not in popdefs, "house was defined: the word frequency list is missing or broken"
+    assert not os.path.exists(os.path.join(home, "nltk_data")), "The EXE downloaded wordnet instead of using its own copy"
     print("CLI test passed: wordnet and word frequencies both work offline.")
 
 
