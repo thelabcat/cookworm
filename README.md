@@ -5,7 +5,7 @@ This program edits the wordlist and popup definitions for the game [BookWorm Del
 
 ## Installation
 ### Windows portable EXE
-[Download EXE](https://github.com/thelabcat/cookworm/releases/latest/download/cookworm-win-x86_64.exe) (Windows only). It is one file, needs no installation, and works offline: the WordNet dictionary and the word frequency list are inside it. Older versions are on the [releases page](https://github.com/thelabcat/cookworm/releases). Because it is a windowed app, the command line options still work with it but print nothing to the terminal.
+[Download EXE](https://github.com/thelabcat/cookworm/releases/latest/download/cookworm-win-x86_64.exe) (Windows only). It is one file, needs no installation, and works offline: the WordNet dictionary and the word frequency list are inside it. Older versions are on the [releases page](https://github.com/thelabcat/cookworm/releases). Because it is a windowed app, the command line options technically still work with it, but print nothing to the terminal.
 
 ### Any OS: Python package
 This app requires that [Python](https://python.org) and Pip are installed. It is officially written in Python 3.14, and is known to not work with anything older than 3.10. Once you have that, open a command line (Windows Terminal or PowerShell counts), and run `pip install cookworm`. If it fails with an error about the "environment is externally managed", you will have to create a Python virtual environment and activate it, then try again. The script command to run, and the Python library name to import, are both `cookworm`. I'm not sure how to make a Windows shortcut for a command though...
@@ -20,7 +20,7 @@ In the `src` directory, either run `python -m cookworm` or `python cookworm_gui_
 
 ## Usage
 ### GUI
-NOTE: (Does not apply to the Windows EXE, which carries the dictionary.) For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
+NOTE: (Does not apply to the Windows EXE, which carries the dictionary) For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
 
 When the program opens, it will default to opening the BookWorm Deluxe folder in the expected system location per your platform, or the last location that it was successfully opened to, whichever seems better. The memory for that last opened location is stored in `~/.cookworm/config.yaml`. You can safely delete this file to reset the configuration to the defaults. If on Linux or MacOS, the program will assume the default Wine prefix in your user directory. If it does not find the `wordlist.txt` and `popdefs.txt` files in this default location, or the default location doesn't exist, it will ask you to choose the BookWorm Deluxe folder manually.
 
@@ -97,6 +97,8 @@ The Windows EXE is built by the `Release` GitHub workflow (`.github/workflows/re
 Hope this helps!
 
 ## Legal:
+
+### This file's license
 Copyright 2025 Wilbur Jaywright d.b.a. Marswide BGL.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -111,9 +113,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-**S.D.G.**
-
-## Third-party data in the Windows EXE
+### Third-party data in the Windows EXE
 The Windows EXE includes, unmodified:
 - The [WordNet](https://wordnet.princeton.edu/) 3.0 English dictionary, as distributed by [NLTK](https://www.nltk.org/nltk_data/), under the following license.
 - The English word frequency lists of [wordfreq](https://github.com/rspeer/wordfreq) (code under Apache-2.0, data under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), derived in part from Google Books Ngrams: http://books.google.com/ngrams).
@@ -151,3 +151,5 @@ and/or database.  Title to copyright in this software, database and
 any associated documentation shall at all times remain with
 Princeton University and LICENSEE agrees to preserve same.
 ```
+
+### S.D.G.
