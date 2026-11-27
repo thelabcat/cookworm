@@ -3,7 +3,11 @@
 
 This program edits the wordlist and popup definitions for the game [BookWorm Deluxe by PopCap Games](https://oldgamesdownload.com/bookworm-deluxe/) released in 2006. I created this program after augmenting the wordlist more manually using [this free list of English words by dwyl](https://github.com/dwyl/english-words), but then discovering that it contained some errors, along with real words that I felt deserved a popdef. 
 
-## Normal installation
+## Installation
+### Windows portable EXE
+[Download EXE](https://github.com/thelabcat/cookworm/releases/latest/download/cookworm-win-x86_64.exe) (Windows only). It is one file, needs no installation, and works offline: the WordNet dictionary and the word frequency list are inside it. Older versions are on the [releases page](https://github.com/thelabcat/cookworm/releases). Because it is a windowed app, the command line options still work with it but print nothing to the terminal.
+
+### Any OS: Python package
 This app requires that [Python](https://python.org) and Pip are installed. It is officially written in Python 3.14, and is known to not work with anything older than 3.10. Once you have that, open a command line (Windows Terminal or PowerShell counts), and run `pip install cookworm`. If it fails with an error about the "environment is externally managed", you will have to create a Python virtual environment and activate it, then try again. The script command to run, and the Python library name to import, are both `cookworm`. I'm not sure how to make a Windows shortcut for a command though...
 
 ## Running from source (for nerds)
@@ -16,7 +20,7 @@ In the `src` directory, either run `python -m cookworm` or `python cookworm_gui_
 
 ## Usage
 ### GUI
-NOTE: For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
+NOTE: (Does not apply to the Windows EXE, which carries the dictionary.) For the auto-define button to work, the program requires an internet connection to download the NLTK wordnet package when it starts up for the first time. If it doesn't have one, it will still function mostly-normally, but the button will just show an error message. It will try to download wordnet again on the next startup.
 
 When the program opens, it will default to opening the BookWorm Deluxe folder in the expected system location per your platform, or the last location that it was successfully opened to, whichever seems better. The memory for that last opened location is stored in `~/.cookworm/config.yaml`. You can safely delete this file to reset the configuration to the defaults. If on Linux or MacOS, the program will assume the default Wine prefix in your user directory. If it does not find the `wordlist.txt` and `popdefs.txt` files in this default location, or the default location doesn't exist, it will ask you to choose the BookWorm Deluxe folder manually.
 
@@ -88,11 +92,7 @@ This is more for nerds trying to automate stuff, as in even bigger nerds than th
 Various antivirus services occasionally flag any and all Windows executables packaged with PyInstaller. This is a false positive: While malware could certainly be written in Python and subsequently packaged with PyInstaller into an exe, the exe would be malicious because of the packaged Python code, not because of PyInstaller. I've reported the problem to the antivirus services that I found false positive reporting forms for, but often only the specific app version was whitelisted, if anything at all. It turns out that this is a known issue with, or rather limitation of, PyInstaller, and therefore there isn't anything its devs can permanently do about it. Long story short, a PyInstaller executable works by extracting from itself the Python interpreter, supporting libraries, and the script to run. What's more, it's doing this all in temporary storage. That looks rather suspicious to some antimalware heuristics, and understandably so. Since then, Malwarebytes in particular has tried to remedy the issue on their end, assumably by whitelisting the PyInstaller bootloader hash, but a new bootloader update for PyInstaller could change that. I'd like to thank Malwarebytes for their effort, in any case. They in particular were very quick to fix the false positive for my apps individually, even before the PyInstaller master fix. I don't use them personally, but that is good service.
 
 ## Bundling yourself:
-If you wish to bundle the application yourself with PyInstaller, you can run `pyinstaller_build.sh` in Windows Git Bash or Linux (or possibly MacOS). It requires that:
-- You have an internet connection.
-- The `python` and `pip` command point to Python 3.10 or newer and it's respective Pip tool (may point to Python 2.7 on some systems).
-- The venv package for that Python is installed.
-It will automatically set up a clean virtual environment with the program's dependencies and PyInstaller, update the word frequency list, then package the application. If bundling on Linux, be warned of [issue #18](https://github.com/thelabcat/bookworm-wordlist-editor/issues/18).
+The Windows EXE is built by the `Release` GitHub workflow (`.github/workflows/release.yml`) whenever a release is published. To build it yourself on Windows, from the repository root: install the app and PyInstaller (`pip install . pyinstaller`), download the dictionary to bundle (`python -m nltk.downloader --no-extract wordnet`), then run `python .github/scripts/build_exe.py cookworm-win-x86_64`. The EXE appears in `dist-exe`. `python .github/scripts/smoke_test_exe.py dist-exe/cookworm-win-x86_64.exe` checks that it works offline. Linux builds are not supported, because Python's TLS certificate lookup does not survive being bundled across distributions, and the dictionary download needs it. Use the Python package there.
 
 Hope this helps!
 
@@ -112,3 +112,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 **S.D.G.**
+
+## Third-party data in the Windows EXE
+The Windows EXE includes, unmodified:
+- The [WordNet](https://wordnet.princeton.edu/) 3.0 English dictionary, as distributed by [NLTK](https://www.nltk.org/nltk_data/), under the following license.
+- The English word frequency lists of [wordfreq](https://github.com/rspeer/wordfreq) (code under Apache-2.0, data under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), derived in part from Google Books Ngrams: http://books.google.com/ngrams).
+
+```
+WordNet Release 3.0
+
+This software and database is being provided to you, the LICENSEE, by
+Princeton University under the following license.  By obtaining, using
+and/or copying this software and database, you agree that you have
+read, understood, and will comply with these terms and conditions.:
+
+Permission to use, copy, modify and distribute this software and
+database and its documentation for any purpose and without fee or
+royalty is hereby granted, provided that you agree to comply with
+the following copyright notice and statements, including the disclaimer,
+and that the same appear on ALL copies of the software, database and
+documentation, including modifications that you make for internal
+use or for distribution.
+
+WordNet 3.0 Copyright 2006 by Princeton University.  All rights reserved.
+
+THIS SOFTWARE AND DATABASE IS PROVIDED "AS IS" AND PRINCETON
+UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
+IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, PRINCETON
+UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES OF MERCHANT-
+ABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE
+OF THE LICENSED SOFTWARE, DATABASE OR DOCUMENTATION WILL NOT
+INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR
+OTHER RIGHTS.
+
+The name of Princeton University or Princeton may not be used in
+advertising or publicity pertaining to distribution of the software
+and/or database.  Title to copyright in this software, database and
+any associated documentation shall at all times remain with
+Princeton University and LICENSEE agrees to preserve same.
+```

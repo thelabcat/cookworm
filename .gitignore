@@ -1,1 +1,7 @@
 **/__pycache__
+build/
+build-exe/
+dist/
+dist-exe/
+*.spec
+large_en.msgpack.gz
